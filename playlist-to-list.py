@@ -5,6 +5,38 @@ import time
 
 TOKEN = ''
 
+#region ideias
+# 1. Salvar a lista em um arquivo
+# Permita salvar a lista em um .txt ou .csv para facilitar o compartilhamento.
+
+# 2. Filtrar por gênero
+# Adicione uma opção para mostrar/copiar apenas músicas de um gênero específico.
+
+# 3. Mostrar todos os artistas
+# Se a música tiver mais de um artista, mostre todos (não só o primeiro).
+
+# 4. Mostrar mais informações
+# Inclua o álbum, duração da música, popularidade ou link direto para a faixa.
+
+# 5. Interface gráfica
+# Crie uma interface simples com Tkinter ou PySimpleGUI para facilitar o uso.
+
+# 6. Exportar para Excel
+# Permita exportar a lista para um arquivo .xlsx com colunas para música, artista, gênero, etc.
+
+# 7. Buscar playlists do usuário
+# Implemente autenticação OAuth para buscar playlists diretamente da sua conta Spotify.
+
+# 8. Buscar letras das músicas
+# Integre com APIs de letras (ex: Vagalume, Genius) para mostrar/copiar as letras junto.
+
+# 9. Remover duplicadas
+# Adicione uma opção para remover músicas repetidas da lista.
+
+# 10. Melhorar agrupamento de gêneros
+# Agrupe gêneros semelhantes (ex: "sertanejo", "sertanejo universitário", "sertanejo pop" → "Sertanejo").
+#endregion
+
 def get_artist_genre(artist_id, headers, cache):
     if artist_id in cache:
         return cache[artist_id]
@@ -97,3 +129,4 @@ if __name__ == "__main__":
     if copiar == 's':
         pyperclip.copy('\n'.join(musicas))
         print("Lista copiada para a área de transferência!")
+
