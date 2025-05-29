@@ -55,7 +55,7 @@ TOKEN = 'seu_token_aqui'
 3. Execute o script no terminal:
 
 ```bash
-python nome_do_arquivo.py
+python spotify-playlist-categorizer.py
 ```
 
 4. Cole o link da playlist do Spotify quando solicitado.
