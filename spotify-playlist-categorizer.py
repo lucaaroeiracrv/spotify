@@ -95,7 +95,12 @@ def get_playlist_tracks(playlist_url):
             loading_bar(processed, total_tracks)
         if next_url:
             response = requests.get(next_url, headers=headers)
-            data = response.json()
+            try:
+                data = response.json()
+            except Exception as e:
+                print("\nErro ao decodificar resposta da API. Possível token expirado ou limite atingido.")
+                print("Detalhes:", e)
+                break
             items = data.get('items', [])
             next_url = data.get('next')
         else:
