@@ -15,6 +15,7 @@ TOKEN = ''
 # 3. Mostrar todos os artistas
 # Se a música tiver mais de um artista, mostre todos (não só o primeiro).
 
+
 # 4. Mostrar mais informações
 # Inclua o álbum, duração da música, popularidade ou link direto para a faixa.
 
@@ -130,8 +131,25 @@ if __name__ == "__main__":
         print(linha)
     print(f"\nTotal de músicas: {len(musicas)}")
 
-    copiar = input("\nDeseja copiar a lista de músicas para a área de transferência? (s/n): ").strip().lower()
-    if copiar == 's':
-        pyperclip.copy('\n'.join(musicas))
-        print("Lista copiada para a área de transferência!")
+    # Modificando as opções de exportação
+    print("\nEscolha uma opção:")
+    print("1 - Copiar lista completa (com categorias) para área de transferência")
+    print("2 - Salvar lista em arquivo texto")
+    print("3 - Ambos")
+    print("4 - Sair")
+    
+    opcao = input("Digite sua escolha (1-4): ").strip()
+    
+    if opcao in ['1', '3']:
+        pyperclip.copy('\n'.join(lista_final))
+        print("Lista completa copiada para a área de transferência!")
+        
+    if opcao in ['2', '3']:
+        nome_arquivo = "playlist_categorizada.txt"
+        with open(nome_arquivo, 'w', encoding='utf-8') as f:
+            f.write('\n'.join(lista_final))
+        print(f"Lista salva no arquivo: {nome_arquivo}")
+    
+    if opcao not in ['1', '2', '3', '4']:
+        print("Opção inválida!")
 
