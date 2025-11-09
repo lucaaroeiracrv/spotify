@@ -57,8 +57,7 @@ def loading_bar(progress, total, bar_length=40):
     sys.stdout.write(f'\rCarregando músicas: [{arrow}{spaces}] {int(percent*100)}%')
     sys.stdout.flush()
 
-def get_playlist_tracks(playlist_url):
-    playlist_id = playlist_url.split("/")[-1].split("?")[0]
+def get_playlist_tracks(playlist_id):
     url = f"https://api.spotify.com/v1/playlists/{playlist_id}/tracks"
     headers = {
         "Authorization": f"Bearer {TOKEN}"
@@ -67,13 +66,39 @@ def get_playlist_tracks(playlist_url):
     params = {"limit": 100, "offset": 0}
     artist_genre_cache = {}
 
-    # Descobrir o total de faixas para a barra de progresso
-    total_tracks = None
+    # Verificar resposta inicial
     first_response = requests.get(url, headers=headers, params=params)
-    data = first_response.json()
-    if 'items' not in data:
-        print("\nErro na requisição! Verifique seu token ou o link da playlist.")
+    
+    # Adicionar verificação do status code
+    if first_response.status_code == 401:
+        print("\n❌ Erro: Token do Spotify expirado!")
+        print("Por favor, atualize o token na variável TOKEN no início do código.")
+        print("\nComo atualizar o token:")
+        print("1. Acesse: https://developer.spotify.com/console/get-playlist-tracks/")
+        print("2. Clique em 'Get Token'")
+        print("3. Selecione as permissões necessárias")
+        print("4. Copie o novo token e substitua no código")
         return []
+    
+    try:
+        data = first_response.json()
+    except requests.exceptions.JSONDecodeError:
+        print("\n❌ Erro na comunicação com a API do Spotify!")
+        print("Possíveis causas:")
+        print("• Token expirado ou inválido")
+        print("• Problema de conexão com a internet")
+        print("• API do Spotify temporariamente indisponível")
+        return []
+
+    if 'error' in data:
+        print(f"\n❌ Erro: {data['error'].get('message', 'Erro desconhecido')}")
+        return []
+    
+    if 'items' not in data:
+        print("\n❌ Erro: Formato de resposta inesperado da API")
+        print("Verifique se o link da playlist está correto")
+        return []
+
     total_tracks = data.get('total', 0)
     next_url = data['next']
     items = data['items']
@@ -112,6 +137,12 @@ def get_playlist_tracks(playlist_url):
 if __name__ == "__main__":
     url = input("Cole o link da playlist do Spotify: ")
     musicas_info = get_playlist_tracks(url)
+    
+    if not musicas_info:
+        print("\n⚠️ Não foi possível obter as músicas da playlist.")
+        print("Por favor, tente novamente com um token válido.")
+        sys.exit(1)
+    
     musicas = [m["musica"] for m in musicas_info]
 
     # Organiza por gênero
