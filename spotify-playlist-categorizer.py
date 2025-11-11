@@ -2,8 +2,10 @@ import requests
 import pyperclip
 import sys
 import time
+import os
+from pathlib import Path
 
-TOKEN = ''
+TOKEN = 'BQAl9kaygUSSs9UdFbVvFU4VVSTgUVII3Rp_XSZGoPK0zKGQ9TkuN0tjuODs8WOXxneokqrhjOciVVBH1_P5I79TQrllCG'
 
 #region ideias
 # 1. Salvar a lista em um arquivo
@@ -56,6 +58,17 @@ def loading_bar(progress, total, bar_length=40):
     spaces = ' ' * (bar_length - len(arrow))
     sys.stdout.write(f'\rCarregando músicas: [{arrow}{spaces}] {int(percent*100)}%')
     sys.stdout.flush()
+
+def get_playlist_name(playlist_url):
+    playlist_id = playlist_url.split("/")[-1].split("?")[0]
+    url = f"https://api.spotify.com/v1/playlists/{playlist_id}"
+    headers = {
+        "Authorization": f"Bearer {TOKEN}"
+    }
+    response = requests.get(url, headers=headers)
+    if response.status_code == 200:
+        return response.json().get('name', 'playlist')
+    return 'playlist'
 
 def get_playlist_tracks(playlist_url):
     playlist_id = playlist_url.split("/")[-1].split("?")[0]
@@ -111,6 +124,7 @@ def get_playlist_tracks(playlist_url):
 
 if __name__ == "__main__":
     url = input("Cole o link da playlist do Spotify: ")
+    playlist_name = get_playlist_name(url)
     musicas_info = get_playlist_tracks(url)
     musicas = [m["musica"] for m in musicas_info]
 
@@ -145,11 +159,15 @@ if __name__ == "__main__":
         print("Lista completa copiada para a área de transferência!")
         
     if opcao in ['2', '3']:
-        nome_arquivo = "playlist_categorizada.txt"
+        # Criar pasta 'playlist' se não existir
+        pasta_playlist = Path("playlist")
+        pasta_playlist.mkdir(exist_ok=True)
+        
+        # Salvar arquivo com nome da playlist
+        nome_arquivo = pasta_playlist / f"{playlist_name}.txt"
         with open(nome_arquivo, 'w', encoding='utf-8') as f:
             f.write('\n'.join(lista_final))
         print(f"Lista salva no arquivo: {nome_arquivo}")
     
     if opcao not in ['1', '2', '3', '4']:
         print("Opção inválida!")
-
