@@ -5,7 +5,7 @@ import time
 import os
 from pathlib import Path
 
-TOKEN = 'BQAl9kaygUSSs9UdFbVvFU4VVSTgUVII3Rp_XSZGoPK0zKGQ9TkuN0tjuODs8WOXxneokqrhjOciVVBH1_P5I79TQrllCG'
+TOKEN = ''
 
 #region ideias
 # 1. Salvar a lista em um arquivo
