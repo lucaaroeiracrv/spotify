@@ -9,14 +9,16 @@ import base64
 from urllib.parse import urlencode, parse_qs
 from http.server import HTTPServer, BaseHTTPRequestHandler
 import threading
+import re
+import unicodedata
 
 # CONFIGURAÇÃO
 # Preencha as credenciais inline abaixo APENAS para uso local
 #   - Preencha e use normalmente
 #   - ANTES de fazer commit, LIMPE estes valores (deixe strings vazias)
 # link do dashboard: https://developer.spotify.com/dashboard/821ef4e9cf754b4aa26b4537fe2b0f34
-INLINE_CLIENT_ID = '' 
-INLINE_CLIENT_SECRET = '' 
+INLINE_CLIENT_ID = '821ef4e9cf754b4aa26b4537fe2b0f34' 
+INLINE_CLIENT_SECRET = '61a63dbcdd2749fd82337b494b57509a' 
 INLINE_REDIRECT_URI = 'http://127.0.0.1:8888/callback'
 
 # As credenciais são lidas daqui; REDIRECT_URI padrão: http://127.0.0.1:8888/callback
@@ -27,6 +29,190 @@ REDIRECT_URI = (INLINE_REDIRECT_URI or os.getenv('SPOTIFY_REDIRECT_URI', 'http:/
 TOKEN = None
 USER_ID = None
 auth_code_received = None
+
+# Mapeamento de gêneros específicos para categorias principais
+# Dica: adicione novos termos aqui conforme necessário
+GENRE_KEYWORDS = {
+
+    # =======================
+    # SERTANEJO
+    # =======================
+    "Sertanejo Tradicional": {
+        "sertanejo tradicional", "sertanejo raiz", "moda de viola",
+        "modao", "modão", "viola caipira", "música caipira",
+        "musica caipira", "sertanejo antigo", "folk brasileiro",
+    },
+
+    "Sertanejo Universitário": {
+        "sertanejo universitário", "sertanejo universitario",
+        "sertanejo pop",
+    },
+
+    "Sertanejo": {
+        "sertanejo", "agronejo", "country brasileiro",
+        "arrocha", "piseiro", "pisadinha", "forró", "forro",
+        "brega", "tecnobrega", "seresta",
+    },
+
+    # =======================
+    # SAMBA / PAGODE
+    # =======================
+    "Samba": {
+        "samba", "samba carioca", "samba paulista", "samba raiz",
+        "samba de roda", "samba-enredo", "samba de terreiro",
+        "samba de gafieira", "axé", "axe",
+    },
+
+    "Pagode": {
+        "pagode", "pagode romântico", "pagode romantico",
+        "pagode sentimental", "pagode anos 90", "pagode moderno",
+        "pagode baiano", "nova mpb", "mpb", "brazilian pop",
+    },
+
+    # =======================
+    # RAP / TRAP / FUNK
+    # =======================
+    "Trap": {
+        "trap", "brazilian trap", "trap brasileiro",
+        "trap nacional", "trap funk", "drill", "drill brasileiro",
+    },
+
+    "Boom Bap": {
+        "boom bap", "boom-bap", "old school rap",
+        "classic hip hop", "brazilian hip hop",
+    },
+
+    "Funk": {
+        "funk", "brazilian funk", "funk brasileiro",
+        "funk carioca", "funk consciente", "funk melody",
+        "funk pop", "funk de bh", "brega funk", "150 bpm",
+    },
+
+    # =======================
+    # ROCK
+    # =======================
+    "Rock": {
+        "rock", "alternative rock", "indie rock", "garage rock",
+        "grunge", "hard rock", "classic rock", "psychedelic rock",
+        "soft rock", "punk rock", "post-punk", "new wave",
+    },
+
+    "Rock Brasileiro": {
+        "rock brasileiro", "rock nacional", "pop rock brasileiro",
+        "indie brasileiro", "alternativo brasileiro",
+    },
+
+    # =======================
+    # METAL
+    # =======================
+    "Metal": {
+        "metal", "heavy metal", "thrash metal", "death metal",
+        "black metal", "doom metal", "power metal", "nu metal",
+        "metalcore", "deathcore", "industrial metal",
+        "metal brasileiro",
+    },
+
+    # =======================
+    # POP
+    # =======================
+    "Pop": {
+        "pop", "dance pop", "electropop", "synthpop",
+        "indie pop", "alt pop", "teen pop", "pop rock",
+        "pop internacional",
+    },
+
+    # =======================
+    # ELETRÔNICA
+    # =======================
+    "Eletrônica": {
+        "electronic", "eletronica", "eletrônica", "edm",
+        "house", "deep house", "tech house", "progressive house",
+        "techno", "minimal techno", "trance", "psytrance",
+        "drum and bass", "dnb", "dubstep", "hardstyle",
+        "electro house",
+    },
+
+    # =======================
+    # REGGAE
+    # =======================
+    "Reggae": {
+        "reggae", "roots reggae", "reggae brasileiro",
+        "dub", "dancehall",
+    },
+
+    # =======================
+    # R&B / SOUL
+    # =======================
+    "R&B / Soul": {
+        "r&b", "soul", "neo soul", "contemporary r&b",
+        "alternative r&b", "quiet storm",
+    },
+
+    # =======================
+    # LATINO
+    # =======================
+    "Latino": {
+        "latin", "latino", "latin pop", "reggaeton",
+        "bachata", "salsa", "merengue",
+    },
+
+    # =======================
+    # JAZZ / CLÁSSICA
+    # =======================
+    "Jazz": {
+        "jazz", "smooth jazz", "jazz fusion",
+        "bossa jazz", "latin jazz",
+    },
+
+    "Clássica": {
+        "classical", "classica", "clássica",
+        "orchestral", "instrumental classical",
+        "symphonic",
+    },
+}
+
+
+def normalize_string(text: str) -> str:
+    if not text:
+        return ""
+    text = text.strip().lower()
+    text = unicodedata.normalize("NFKD", text)
+    text = "".join([c for c in text if not unicodedata.combining(c)])
+    text = re.sub(r"[^a-z0-9\s]+", " ", text)
+    text = re.sub(r"\s+", " ", text)
+    return text.strip()
+
+def normalize_genre_name(genre: str) -> str:
+    return normalize_string(genre)
+
+def _keyword_matches(normalized_genre: str, keyword: str) -> bool:
+    normalized_keyword = normalize_genre_name(keyword)
+    if not normalized_keyword:
+        return False
+    # Regex com bordas de palavra, mas aceitando espaços internos
+    pattern = r"\b" + re.escape(normalized_keyword).replace(r"\ ", r"\s+") + r"\b"
+    return re.search(pattern, normalized_genre) is not None
+
+def map_genre_to_main(genre: str) -> str | None:
+    normalized = normalize_genre_name(genre)
+    if not normalized:
+        return None
+    for main_genre, keywords in GENRE_KEYWORDS.items():
+        for kw in keywords:
+            if _keyword_matches(normalized, kw):
+                return main_genre
+    return None
+
+def choose_main_genres(genres: list[str], max_categories: int = 2) -> list[str]:
+    candidates = []
+    for g in genres:
+        main = map_genre_to_main(g)
+        if main and main not in candidates:
+            candidates.append(main)
+
+    if not candidates:
+        return ["Outros"]
+    return candidates[:max_categories]
 
 #region ideias
 # 1. Salvar a lista em um arquivo
@@ -148,10 +334,9 @@ def get_artist_genre(artist_id, headers, cache):
     resp = requests.get(url, headers=headers)
     if resp.status_code == 200:
         genres = resp.json().get('genres', [])
-        genre = ', '.join(genres) if genres else "outros"
-        cache[artist_id] = genre
-        return genre
-    return "outros"
+        cache[artist_id] = genres
+        return genres
+    return []
 
 def loading_bar(progress, total, bar_length=40):
     percent = float(progress) / total
@@ -201,11 +386,13 @@ def get_playlist_tracks(playlist_url):
                 artist = track['artists'][0]['name']
                 artist_id = track['artists'][0]['id']
                 track_uri = track['uri']  # Adicionar URI da música
-                genre = get_artist_genre(artist_id, headers, artist_genre_cache)
+                genres = get_artist_genre(artist_id, headers, artist_genre_cache)
+                generos_principais = choose_main_genres(genres, max_categories=2)
                 tracks.append({
                     "musica": f"{name} - {artist}",
                     "artista": artist,
-                    "genero": genre,
+                    "generos": genres,
+                    "generos_principais": generos_principais,
                     "uri": track_uri  # Guardar URI para criar playlists
                 })
             processed += 1
@@ -331,17 +518,28 @@ if __name__ == "__main__":
     musicas_info = get_playlist_tracks(url)
     musicas = [m["musica"] for m in musicas_info]
 
-    # Organiza por gênero
+    # Organiza por gêneros principais (até 2 categorias por música)
     estilos_dict = {}
     estilos_dict_uris = {}  # Guardar URIs também
+    seen_uris = set()
     for m in musicas_info:
-        for genero in m["genero"].split(", "):
-            estilos_dict.setdefault(genero, []).append(m["musica"])
-            estilos_dict_uris.setdefault(genero, []).append(m["uri"])
+        if m["uri"] in seen_uris:
+            continue
+        seen_uris.add(m["uri"])
 
-    # Exibe por ordem alfabética dos estilos, separando melhor as características
+        generos_principais = m.get("generos_principais") or ["Outros"]
+        adicionados = set()
+        for genero_principal in generos_principais[:2]:
+            if genero_principal in adicionados:
+                continue
+            adicionados.add(genero_principal)
+            estilos_dict.setdefault(genero_principal, []).append(m["musica"])
+            estilos_dict_uris.setdefault(genero_principal, []).append(m["uri"])
+
+    # Exibe por ordem alfabética
     lista_final = []
-    for estilo in sorted(estilos_dict):
+    estilos_ordenados = sorted(estilos_dict)
+    for estilo in estilos_ordenados:
         lista_final.append(f"\n-------------({estilo.upper()})-------------")
         for musica in estilos_dict[estilo]:
             lista_final.append(musica)
@@ -388,7 +586,8 @@ if __name__ == "__main__":
         playlist_publica = input("Playlists públicas? (s/n, padrão: n): ").strip().lower() == 's'
         
         playlists_criadas = 0
-        for genero, track_uris in estilos_dict_uris.items():  # corrigido .items()
+        for genero in estilos_ordenados:
+            track_uris = estilos_dict_uris.get(genero, [])
             if len(track_uris) == 0:
                 continue
             
