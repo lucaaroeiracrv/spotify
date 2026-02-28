@@ -9,6 +9,8 @@ import base64
 from urllib.parse import urlencode, parse_qs
 from http.server import HTTPServer, BaseHTTPRequestHandler
 import threading
+from requests.adapters import HTTPAdapter
+from urllib3.util import Retry
 import re
 import unicodedata
 
@@ -29,6 +31,74 @@ REDIRECT_URI = (INLINE_REDIRECT_URI or os.getenv('SPOTIFY_REDIRECT_URI', 'http:/
 TOKEN = None
 USER_ID = None
 auth_code_received = None
+
+# Network / retry settings
+REQUEST_TIMEOUT = 10  # seconds for requests
+MAX_RETRIES = 5
+BACKOFF_FACTOR = 0.5
+
+# Create a requests.Session with retries/backoff for resilient API calls
+SESSION = None
+
+def create_session():
+    global SESSION
+    if SESSION is not None:
+        return SESSION
+    session = requests.Session()
+    try:
+        retry = Retry(
+            total=MAX_RETRIES,
+            backoff_factor=BACKOFF_FACTOR,
+            status_forcelist=[429, 500, 502, 503, 504],
+            allowed_methods=frozenset(["GET", "POST", "PUT", "DELETE", "HEAD"]),
+        )
+    except TypeError:
+        # older urllib3 uses 'method_whitelist'
+        retry = Retry(
+            total=MAX_RETRIES,
+            backoff_factor=BACKOFF_FACTOR,
+            status_forcelist=[429, 500, 502, 503, 504],
+            method_whitelist=frozenset(["GET", "POST", "PUT", "DELETE", "HEAD"]),
+        )
+    adapter = HTTPAdapter(max_retries=retry)
+    session.mount('https://', adapter)
+    session.mount('http://', adapter)
+    SESSION = session
+    return SESSION
+
+
+def request_with_retries(method, url, **kwargs):
+    """Make HTTP request using the global session with retries and handle 429 Retry-After.
+
+    Returns a requests.Response or None on unrecoverable error.
+    """
+    session = create_session()
+    attempt = 0
+    while attempt <= MAX_RETRIES:
+        attempt += 1
+        try:
+            resp = session.request(method, url, timeout=REQUEST_TIMEOUT, **kwargs)
+        except requests.exceptions.RequestException as e:
+            if attempt > MAX_RETRIES:
+                print(f"Erro de conexão ({e}) ao acessar: {url}")
+                return None
+            sleep_time = BACKOFF_FACTOR * (2 ** (attempt - 1))
+            time.sleep(sleep_time)
+            continue
+
+        # If rate limited, respect Retry-After if present
+        if resp is not None and resp.status_code == 429:
+            retry_after = resp.headers.get('Retry-After')
+            try:
+                wait = int(retry_after) if retry_after is not None else BACKOFF_FACTOR * (2 ** (attempt - 1))
+            except Exception:
+                wait = BACKOFF_FACTOR * (2 ** (attempt - 1))
+            print(f"Recebi 429; aguardando {wait} segundos antes de tentar novamente...")
+            time.sleep(wait)
+            continue
+
+        return resp
+    return None
 
 # Mapeamento de gêneros específicos para categorias principais
 # Dica: adicione novos termos aqui conforme necessário
@@ -275,21 +345,24 @@ def get_token_from_code(auth_code):
         "redirect_uri": REDIRECT_URI
     }
     
-    response = requests.post(url, headers=headers, data=data)
-    if response.status_code == 200:
-        return response.json()['access_token']
+    response = request_with_retries("POST", url, headers=headers, data=data)
+    if response is not None and response.status_code == 200:
+        return response.json().get('access_token')
     else:
-        print(f"\n⚠️  Erro ao obter token. Status: {response.status_code}")
-        print(f"Resposta: {response.text}")
+        if response is None:
+            print("\n⚠️  Erro ao obter token: sem resposta da rede.")
+        else:
+            print(f"\n⚠️  Erro ao obter token. Status: {response.status_code}")
+            print(f"Resposta: {response.text}")
     return None
 
 def get_user_id(token):
     """Obtém o ID do usuário autenticado"""
     url = "https://api.spotify.com/v1/me"
     headers = {"Authorization": f"Bearer {token}"}
-    response = requests.get(url, headers=headers)
-    if response.status_code == 200:
-        return response.json()['id']
+    response = request_with_retries("GET", url, headers=headers)
+    if response is not None and response.status_code == 200:
+        return response.json().get('id')
     return None
 
 def create_playlist(name, token, is_public=True):
@@ -304,9 +377,9 @@ def create_playlist(name, token, is_public=True):
         "public": is_public,
         "description": f"Playlist gerada automaticamente - Gênero: {name}"
     }
-    response = requests.post(url, headers=headers, json=data)
-    if response.status_code == 201:
-        return response.json()['id']
+    response = request_with_retries("POST", url, headers=headers, json=data)
+    if response is not None and response.status_code == 201:
+        return response.json().get('id')
     return None
 
 def add_tracks_to_playlist(playlist_id, track_uris, token):
@@ -321,8 +394,8 @@ def add_tracks_to_playlist(playlist_id, track_uris, token):
     for i in range(0, len(track_uris), 100):
         batch = track_uris[i:i+100]
         data = {"uris": batch}
-        response = requests.post(url, headers=headers, json=data)
-        if response.status_code not in [200, 201]:
+        response = request_with_retries("POST", url, headers=headers, json=data)
+        if response is None or response.status_code not in [200, 201]:
             return False
     return True
 
@@ -331,8 +404,8 @@ def get_artist_genre(artist_id, headers, cache):
     if artist_id in cache:
         return cache[artist_id]
     url = f"https://api.spotify.com/v1/artists/{artist_id}"
-    resp = requests.get(url, headers=headers)
-    if resp.status_code == 200:
+    resp = request_with_retries("GET", url, headers=headers)
+    if resp is not None and resp.status_code == 200:
         genres = resp.json().get('genres', [])
         cache[artist_id] = genres
         return genres
@@ -351,8 +424,8 @@ def get_playlist_name(playlist_url):
     headers = {
         "Authorization": f"Bearer {TOKEN}"
     }
-    response = requests.get(url, headers=headers)
-    if response.status_code == 200:
+    response = request_with_retries("GET", url, headers=headers)
+    if response is not None and response.status_code == 200:
         return response.json().get('name', 'playlist')
     return 'playlist'
 
@@ -368,14 +441,21 @@ def get_playlist_tracks(playlist_url):
 
     # Descobrir o total de faixas para a barra de progresso
     total_tracks = None
-    first_response = requests.get(url, headers=headers, params=params)
-    data = first_response.json()
+    first_response = request_with_retries("GET", url, headers=headers, params=params)
+    if first_response is None:
+        print("\nErro na requisição! Sem resposta da API. Verifique sua conexão ou token.")
+        return []
+    try:
+        data = first_response.json()
+    except Exception:
+        print("\nErro ao decodificar resposta da API. Verifique seu token ou o link da playlist.")
+        return []
     if 'items' not in data:
         print("\nErro na requisição! Verifique seu token ou o link da playlist.")
         return []
     total_tracks = data.get('total', 0)
-    next_url = data['next']
-    items = data['items']
+    next_url = data.get('next')
+    items = data.get('items', [])
     processed = 0
 
     while True:
@@ -398,7 +478,10 @@ def get_playlist_tracks(playlist_url):
             processed += 1
             loading_bar(processed, total_tracks)
         if next_url:
-            response = requests.get(next_url, headers=headers)
+            response = request_with_retries("GET", next_url, headers=headers)
+            if response is None:
+                print("\nErro ao requisitar página seguinte. Interrompendo leitura de faixas.")
+                break
             try:
                 data = response.json()
             except Exception as e:
