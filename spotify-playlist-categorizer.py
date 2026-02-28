@@ -19,8 +19,8 @@ import unicodedata
 #   - Preencha e use normalmente
 #   - ANTES de fazer commit, LIMPE estes valores (deixe strings vazias)
 # link do dashboard: https://developer.spotify.com/dashboard/821ef4e9cf754b4aa26b4537fe2b0f34
-INLINE_CLIENT_ID = '821ef4e9cf754b4aa26b4537fe2b0f34' 
-INLINE_CLIENT_SECRET = '61a63dbcdd2749fd82337b494b57509a' 
+INLINE_CLIENT_ID = '' 
+INLINE_CLIENT_SECRET = '' 
 INLINE_REDIRECT_URI = 'http://127.0.0.1:8888/callback'
 
 # As credenciais são lidas daqui; REDIRECT_URI padrão: http://127.0.0.1:8888/callback
