@@ -13,20 +13,17 @@ from requests.adapters import HTTPAdapter
 from urllib3.util import Retry
 import re
 import unicodedata
+from dotenv import load_dotenv
+
+# Carrega variáveis de ambiente do arquivo .env
+load_dotenv()
 
 # CONFIGURAÇÃO
-# Preencha as credenciais inline abaixo APENAS para uso local
-#   - Preencha e use normalmente
-#   - ANTES de fazer commit, LIMPE estes valores (deixe strings vazias)
-# link do dashboard: https://developer.spotify.com/dashboard/821ef4e9cf754b4aa26b4537fe2b0f34
-INLINE_CLIENT_ID = '' 
-INLINE_CLIENT_SECRET = '' 
-INLINE_REDIRECT_URI = 'http://127.0.0.1:8888/callback'
-
-# As credenciais são lidas daqui; REDIRECT_URI padrão: http://127.0.0.1:8888/callback
-CLIENT_ID = (INLINE_CLIENT_ID or os.getenv('SPOTIFY_CLIENT_ID', '')).strip()
-CLIENT_SECRET = (INLINE_CLIENT_SECRET or os.getenv('SPOTIFY_CLIENT_SECRET', '')).strip()
-REDIRECT_URI = (INLINE_REDIRECT_URI or os.getenv('SPOTIFY_REDIRECT_URI', 'http://127.0.0.1:8888/callback')).strip()
+# As credenciais são lidas do arquivo .env
+# Se .env não existir, o script pedirá para criar
+CLIENT_ID = os.getenv('SPOTIFY_CLIENT_ID', '').strip()
+CLIENT_SECRET = os.getenv('SPOTIFY_CLIENT_SECRET', '').strip()
+REDIRECT_URI = os.getenv('SPOTIFY_REDIRECT_URI', 'http://127.0.0.1:8888/callback').strip()
 
 TOKEN = None
 USER_ID = None
@@ -564,6 +561,15 @@ def open_in_browser(url: str):
 
 if __name__ == "__main__":
     print("\n=== SPOTIFY PLAYLIST ORGANIZER ===\n")
+
+    # Verifica se credenciais estão configuradas
+    if not CLIENT_ID or not CLIENT_SECRET:
+        print("❌ Erro: Credenciais do Spotify não encontradas!")
+        print("\nPor favor, configure o arquivo .env:")
+        print("  1. Copie: .env.example → .env")
+        print("  2. Preencha com suas credenciais do Spotify")
+        print("  3. Execute novamente\n")
+        sys.exit(1)
 
     # Authorization Code Flow
     auth_url = get_auth_url()  # usa response_type=code

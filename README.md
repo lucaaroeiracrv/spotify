@@ -1,5 +1,4 @@
-﻿
-# 🎵 Spotify Playlist Categorizer
+﻿# 🎵 Spotify Playlist Categorizer
 
 ![Python](https://img.shields.io/badge/Python-3.10+-blue.svg)
 ![Spotify](https://img.shields.io/badge/API-Spotify-black)
@@ -21,91 +20,145 @@ Organize qualquer playlist do Spotify por **gênero musical** e, se quiser, crie
 ## ✅ Pré‑requisitos
 
 - Python 3.10 ou superior
-- Bibliotecas: `requests` e `pyperclip`
+- Bibliotecas: `requests`, `pyperclip` e `python-dotenv`
 
 Instale as dependências:
 
 ```powershell
-pip install requests pyperclip
+pip install -r requirements.txt
+```
+
+Ou manualmente:
+
+```powershell
+pip install requests pyperclip python-dotenv
 ```
 
 ---
 
 ## ⚡ Guia rápido (5 passos)
 
-1) No Dashboard do Spotify, crie um app e adicione o Redirect URI: `http://127.0.0.1:8888/callback`.
-2) Abra o arquivo `spotify-playlist-categorizer.py` e preencha, no topo:
-   ```python
-   INLINE_CLIENT_ID = "SEU_CLIENT_ID"
-   INLINE_CLIENT_SECRET = "SEU_CLIENT_SECRET"
-   INLINE_REDIRECT_URI = "http://127.0.0.1:8888/callback"  # mantenha
+### Passo 1: Clonar e instalar dependências
+
+```powershell
+git clone <seu_repo>
+cd spotify
+pip install -r requirements.txt
+```
+
+### Passo 2: Configurar credenciais do Spotify
+
+1) Crie um app no dashboard: https://developer.spotify.com/dashboard
+   - Clique em "Create an App"
+   - Aceite os termos e crie
+   - Acesse as configurações e adicione em "Redirect URIs": `http://127.0.0.1:8888/callback`
+   - Salve e copie seu **Client ID** e **Client Secret**
+
+2) Abra o arquivo `.env.example` e veja o template
+
+3) Crie um novo arquivo `.env` (já no `.gitignore`):
    ```
-   Observação: limpe esses valores antes de fazer commit (não versionar segredos).
-3) Execute:
-   ```powershell
-   python spotify-playlist-categorizer.py
+   SPOTIFY_CLIENT_ID=SEU_CLIENT_ID
+   SPOTIFY_CLIENT_SECRET=SEU_CLIENT_SECRET
+   SPOTIFY_REDIRECT_URI=http://127.0.0.1:8888/callback
    ```
-4) Autorize no navegador; a página mostrará “Autenticacao concluida!”.
-5) Cole o link da playlist (ex.: `https://open.spotify.com/playlist/123...`) e escolha a opção desejada (copiar, salvar ou criar playlists por gênero).
+
+4) **NUNCA** faça commit deste arquivo. Ele está no `.gitignore`.
+
+### Passo 3: Execute o script
+
+```powershell
+python spotify-playlist-categorizer.py
+```
+
+### Passo 4: Autorize no navegador
+- O navegador abrirá automaticamente
+- Após autorizar, você verá "Autenticacao concluida!"
+- Volte ao terminal
+
+### Passo 5: Cole o link da playlist
+- Exemplo válido: `https://open.spotify.com/playlist/37i9dQZF1DXcBWIGoYBM5M`
+- Escolha uma opção (copiar, salvar ou criar playlists)
 
 ---
 
-## 🔐 Configuração do Spotify (rápida)
+## 🔐 Configuração do Spotify (detalhado)
 
-1) Crie um app no dashboard: https://developer.spotify.com/dashboard
-- Em “Redirect URIs”, adicione: `http://127.0.0.1:8888/callback` e clique em Save.
-- Copie o `Client ID` e o `Client Secret`.
+**Importante**: As credenciais sensíveis (Client ID, Client Secret) **não devem ser versionadas** no Git.
 
-2) Informe as credenciais diretamente no código (inline):
+### Como configurar após clonar:
 
-```python
-INLINE_CLIENT_ID = "SEU_CLIENT_ID"
-INLINE_CLIENT_SECRET = "SEU_CLIENT_SECRET"
-INLINE_REDIRECT_URI = "http://127.0.0.1:8888/callback"  # mantenha
-```
+1) **Crie um app em**: https://developer.spotify.com/dashboard
+   - Login com sua conta Spotify
+   - Clique em "Create an App"
+   - Aceite os termos
+   - Copie o **Client ID** e **Client Secret**
 
-Importante: limpe esses valores antes de fazer commit.
+2) **Configure a Redirect URI no dashboard**:
+   - Vá para as configurações do seu app
+   - Em "Redirect URIs", adicione: `http://127.0.0.1:8888/callback`
+   - Clique em Save
 
-Escopos usados: `playlist-modify-public playlist-modify-private`.
+3) **Crie o arquivo `.env`** na raiz do projeto:
+   ```
+   SPOTIFY_CLIENT_ID=abc123def456...
+   SPOTIFY_CLIENT_SECRET=xyz789uvw012...
+   SPOTIFY_REDIRECT_URI=http://127.0.0.1:8888/callback
+   ```
+
+### Por que usar `.env`?
+
+| Arquivo | Commit | Conteúdo |
+|---------|--------|----------|
+| `.env.example` | ✅ Sim | Template vazio (documentação) |
+| `.env` | ❌ Não (`.gitignore`) | Suas credenciais reais |
+
+**Fluxo de segurança:**
+- Você clona o repo → recebe `.env.example`
+- Você cria `.env` com suas credenciais pessoais
+- Git ignora `.env` (`.gitignore`)
+- Suas credenciais nunca são expostas
+
+**Escopos usados**: `playlist-modify-public playlist-modify-private`
 
 ---
 
 ## 🚀 Como usar (passo a passo)
 
-1) Configure as credenciais (onde substituir o quê):
-    - Abra `spotify-playlist-categorizer.py` e, no topo, troque pelos seus valores do dashboard:
-       ```python
-       INLINE_CLIENT_ID = "SEU_CLIENT_ID"        # exemplo: 1a2b3c4d...
-       INLINE_CLIENT_SECRET = "SEU_CLIENT_SECRET"# exemplo: abcd1234...
-       INLINE_REDIRECT_URI = "http://127.0.0.1:8888/callback"  # não altere
-       ```
-       Mantenha a URL do Redirect exatamente igual. Limpe esses valores antes de commitar.
+### Setup inicial (uma única vez):
 
-2) Rode o script:
+1. **Clone e instale**:
+   ```powershell
+   git clone <seu_repositorio>
+   cd spotify
+   pip install -r requirements.txt
+   ```
+
+2. **Configure credenciais**:
+   - Copie `.env.example` → `.env`
+   - Preencha seu Client ID e Client Secret
+   - **Não commit!** O arquivo está em `.gitignore`
+
+3. **Execute o script**:
    ```powershell
    python spotify-playlist-categorizer.py
    ```
 
-3) Autorize no navegador:
-   - O navegador abrirá com a página de autorização do Spotify.
-   - Após autorizar, você verá “Autenticacao concluida!”; volte ao terminal.
+### Uso regular:
 
-4) Cole o link da playlist quando o terminal pedir:
-   - Exemplo válido: `https://open.spotify.com/playlist/37i9dQZF1DXcBWIGoYBM5M`
-
-5) Escolha o que fazer com a lista categorizada:
-   - 1: Copiar para a área de transferência
-   - 2: Salvar em arquivo texto (`playlists/<nome>.txt`)
-   - 3: Copiar + Salvar
-   - 4: Criar playlists no Spotify (uma por gênero)
-
-6) Se escolher criar playlists:
-   - Prefixo (opcional): ex.: `[Rock]` (pressione Enter para deixar vazio)
-   - Públicas? Digite `s` para públicas ou `n` para privadas
+1. O navegador abre automaticamente com a página de autorização
+2. Clique em "Authorize"
+3. Você verá "Autenticacao concluida!" — volte ao terminal
+4. Cole o link da playlist quando solicitado
+5. Escolha a opção desejada:
+   - **1**: Copiar lista para área de transferência
+   - **2**: Salvar em arquivo (`playlists/<nome>.txt`)
+   - **3**: Copiar + Salvar
+   - **4**: Criar playlists no Spotify (uma por gênero)
 
 ---
 
-## 🧪 Exemplo de sessão (resumido)
+## 🧪 Exemplo de sessão
 
 ```text
 === SPOTIFY PLAYLIST ORGANIZER ===
@@ -115,52 +168,68 @@ Aguardando autorização no navegador...
 
 Cole o link da playlist do Spotify: https://open.spotify.com/playlist/37i9dQZF1DXcBWIGoYBM5M
 Carregando músicas: [==========================>         ] 65%
-...
 
 Escolha uma opção:
-1 - Copiar lista
-2 - Salvar em arquivo
+1 - Copiar lista completa (com categorias) para área de transferência
+2 - Salvar lista em arquivo texto
 3 - Copiar + Salvar
-4 - Criar playlists no Spotify (uma por gênero)
+4 - Criar playlists no Spotify (uma para cada gênero)
 
-Prefixo para as playlists (ex.: "[Rock]"): [Enter]
-Playlists públicas? (s/n): s
+Digite sua escolha: 4
+Prefixo para as playlists (ex: "[Rock]", deixe vazio para sem prefixo): 
+Playlists públicas? (s/n, padrão: n): s
+
+🎵 Criando playlists no Spotify...
+Criando playlist: Sertanejo (45 músicas)...
+  ✅ Criada com sucesso!
+Criando playlist: Rock (32 músicas)...
+  ✅ Criada com sucesso!
+
+🎉 Concluído! 2 playlists criadas no seu Spotify!
 ```
 
 ---
 
-## 🛠️ Dicas e observações
+## ️ Dicas e observações
 
 - O script usa um servidor local em `127.0.0.1:8888` para capturar o código OAuth.
-- A correspondência de gênero é baseada nos gêneros do(s) artista(s) na API do Spotify; atualmente usa o primeiro artista da faixa.
+- A correspondência de gênero é baseada nos gêneros do primeiro artista da faixa retornado pela API do Spotify.
 - O script adiciona faixas em lotes de até 100 (limite da API).
+- Tokens não são salvos em disco (gerados a cada execução).
 
 ---
 
 ## 🧯 Solução de problemas
 
-- `INVALID_CLIENT` ou erro 400 ao trocar o código por token: verifique se a Redirect URI cadastrada no dashboard é exatamente `http://127.0.0.1:8888/callback`.
-- Timeout aguardando autorização: finalize a autorização no navegador e confirme que a porta `8888` não está ocupada.
-- Erro 401 em chamadas à API: refaça a autorização executando o script novamente.
-- Erro 429 (rate limit): aguarde alguns segundos/minutos e tente novamente.
-- Não consigo criar playlists: verifique os escopos `playlist-modify-public` e `playlist-modify-private` do app e a autorização concedida.
-- App em modo “Development”: apenas usuários adicionados no dashboard poderão autorizar.
+| Problema | Solução |
+|----------|---------|
+| `INVALID_CLIENT` ou erro 400 | Verifique se a Redirect URI cadastrada é exatamente `http://127.0.0.1:8888/callback` |
+| Timeout aguardando autorização | Confirme que a porta `8888` não está ocupada e finalize a autorização no navegador |
+| Erro 401 em chamadas à API | Refaça a autorização executando o script novamente |
+| Erro 429 (rate limit) | Aguarde alguns segundos/minutos e tente novamente |
+| Não consigo criar playlists | Verifique os escopos e se você autorizou corretamente |
+| App em modo "Development" | Apenas usuários adicionados no dashboard poderão autorizar |
+| `ModuleNotFoundError: requests` | Execute `pip install -r requirements.txt` |
 
 ---
 
 ## 🔒 Segurança
 
-- Não versione suas credenciais: limpe os valores inline antes de commit.
-- O script não persiste tokens em disco.
+- ✅ Suas credenciais ficam em `.env` (nunca em `.py`)
+- ✅ O arquivo está em `.gitignore` e nunca será versionado
+- ✅ O script não persiste tokens em disco
+- ✅ Todos os tokens são gerados a cada execução
+- ❌ Nunca comite `.env`
 
 ---
 
 ## 💡 Ideias futuras
 
-- Filtro de gêneros (incluir/excluir) antes de criar playlists.
-- Remoção de duplicadas por gênero.
-- Exportação para CSV/Excel.
-- UI com Tkinter/PySimpleGUI.
+- Filtro de gêneros (incluir/excluir) antes de criar playlists
+- Remoção de duplicadas por gênero
+- Exportação para CSV/Excel
+- UI com Tkinter/PySimpleGUI
+- Suporte a variáveis de ambiente (`.env`)
 
 ---
 
