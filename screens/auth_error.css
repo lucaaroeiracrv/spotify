@@ -1,0 +1,93 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    background-color: #121212;
+    color: #ffffff;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    overflow: hidden;
+    animation: fadeIn 0.8s ease-in-out;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: scale(0.95); }
+    to { opacity: 1; transform: scale(1); }
+}
+
+.card {
+    background: linear-gradient(145deg, #1a1a1a, #282828);
+    border-radius: 24px;
+    padding: 48px;
+    max-width: 400px;
+    width: 90%;
+    text-align: center;
+    box-shadow:
+        0 20px 40px rgba(0, 0, 0, 0.3),
+        inset 0 1px 0 rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    position: relative;
+}
+
+.status-icon {
+    width: 80px;
+    height: 80px;
+    margin: 0 auto 24px;
+}
+
+.status-icon .icon {
+    width: 100%;
+    height: 100%;
+    stroke: #ff4d4f;
+    stroke-width: 3;
+}
+
+.status-icon .icon circle {
+    fill: none;
+}
+
+.status-icon .icon line {
+    stroke: #ff4d4f;
+}
+
+.title {
+    font-size: 28px;
+    font-weight: 700;
+    margin-bottom: 16px;
+    color: #ff4d4f;
+}
+
+.subtitle {
+    font-size: 16px;
+    font-weight: 400;
+    margin-bottom: 32px;
+    color: #f5b7b7;
+    line-height: 1.5;
+}
+
+.button {
+    background: linear-gradient(145deg, #e74c3c, #ff5a5f);
+    color: #ffffff;
+    border: none;
+    border-radius: 50px;
+    padding: 14px 30px;
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 8px 16px rgba(255, 77, 79, 0.3);
+}
+
+.button:hover {
+    transform: translateY(-2px);
+}
+
+.button:active {
+    transform: translateY(0);
+}

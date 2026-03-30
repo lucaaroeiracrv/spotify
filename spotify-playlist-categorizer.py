@@ -28,6 +28,9 @@ REDIRECT_URI = os.getenv('SPOTIFY_REDIRECT_URI', 'http://127.0.0.1:8888/callback
 TOKEN = None
 USER_ID = None
 auth_code_received = None
+auth_received_time = None
+auth_status = 'idle'  # 'idle', 'pending', 'success', 'error'
+auth_error_message = ''
 
 # Network / retry settings
 REQUEST_TIMEOUT = 10  # seconds for requests
@@ -495,22 +498,78 @@ def get_playlist_tracks(playlist_url):
 class CallbackHandler(BaseHTTPRequestHandler):
     """Servidor HTTP simples para capturar o código OAuth"""
     def do_GET(self):
-        global auth_code_received
-        # Extrair o código da URL
-        query = self.path.split('?')[-1]
-        params = parse_qs(query)
-        
-        if 'code' in params:
-            auth_code_received = params['code'][0]
-            # Enviar resposta de sucesso
+        global auth_code_received, auth_received_time, auth_status, auth_error_message
+
+        requested_path = self.path.split('?', 1)[0]
+
+        # Servir arquivos estáticos de /screens/
+        if requested_path.startswith('/screens/'):
+            asset_name = requested_path[len('/screens/'):]
+            asset_path = Path('screens') / asset_name
+            if asset_path.exists() and asset_path.is_file():
+                ext = asset_path.suffix.lower()
+                content_type = 'application/octet-stream'
+                if ext == '.css':
+                    content_type = 'text/css; charset=utf-8'
+                elif ext == '.html':
+                    content_type = 'text/html; charset=utf-8'
+                elif ext == '.js':
+                    content_type = 'application/javascript; charset=utf-8'
+
+                self.send_response(200)
+                self.send_header('Content-Type', content_type)
+                self.end_headers()
+                with open(asset_path, 'rb') as f:
+                    self.wfile.write(f.read())
+            else:
+                self.send_response(404)
+                self.end_headers()
+            return
+
+        # Callback OAuth padrão
+        if requested_path.startswith('/callback'):
+            query = self.path.split('?', 1)[-1]
+            params = parse_qs(query)
+            if 'code' in params:
+                auth_code_received = params['code'][0]
+                auth_received_time = time.time()
+                auth_status = 'pending'
+                auth_error_message = ''
+
+                self.send_response(200)
+                self.send_header('Content-Type', 'text/html; charset=utf-8')
+                self.end_headers()
+
+                html_path = Path('screens') / 'auth_success.html'
+                try:
+                    with open(html_path, 'r', encoding='utf-8') as f:
+                        self.wfile.write(f.read().encode('utf-8'))
+                except Exception:
+                    fallback_html = '<html><body><h1>Autenticação iniciada...</h1></body></html>'
+                    self.wfile.write(fallback_html.encode('utf-8'))
+            else:
+                self.send_response(400)
+                self.send_header('Content-Type', 'text/plain; charset=utf-8')
+                self.end_headers()
+                self.wfile.write(b'Missing authorization code')
+            return
+
+        # Status do fluxo de autenticação
+        if requested_path.startswith('/oauth-status'):
             self.send_response(200)
-            self.send_header('Content-type', 'text/html')
+            self.send_header('Content-Type', 'application/json; charset=utf-8')
+            self.send_header('Cache-Control', 'no-store, no-cache, must-revalidate')
             self.end_headers()
-            self.wfile.write(b'<html><body><h1>Autenticacao concluida!</h1><p>Voce pode fechar esta janela e voltar ao terminal.</p></body></html>')
-        else:
-            self.send_response(400)
-            self.end_headers()
-    
+            result = {
+                'status': auth_status,
+                'error': auth_error_message,
+            }
+            self.wfile.write(str(result).replace("'", '"').encode('utf-8'))
+            return
+
+        self.send_response(404)
+        self.end_headers()
+
     def log_message(self, format, *args):
         # Suprimir logs do servidor
         pass
@@ -518,7 +577,28 @@ class CallbackHandler(BaseHTTPRequestHandler):
 def start_callback_server():
     """Inicia servidor para receber callback OAuth"""
     server = HTTPServer(('127.0.0.1', 8888), CallbackHandler)
-    thread = threading.Thread(target=server.handle_request)
+    server.timeout = 1
+
+    def serve_until_authorized():
+        global auth_status, auth_received_time, auth_error_message
+        # Permite servir callback + assets/CSS enquanto a autenticação estiver em progresso
+        while True:
+            server.handle_request()
+
+            if auth_status in ['success', 'error']:
+                # espera um pouco para última requisição de client-side (ajax polling)
+                if auth_received_time and time.time() - auth_received_time > 2:
+                    break
+            else:
+                # Mantém vivo por até 60s esperando o fluxo de callback e token
+                if auth_received_time and time.time() - auth_received_time > 60:
+                    auth_status = 'error'
+                    auth_error_message = 'Tempo de autenticação esgotado.'
+                    break
+
+        server.server_close()
+
+    thread = threading.Thread(target=serve_until_authorized)
     thread.daemon = True
     thread.start()
     return server
@@ -587,8 +667,10 @@ if __name__ == "__main__":
         time.sleep(0.3)
 
     if auth_code_received:
+        auth_status = 'pending'
         TOKEN = get_token_from_code(auth_code_received)
         if TOKEN:
+            auth_status = 'success'
             USER_ID = get_user_id(TOKEN)  # opcional, só para validar
             if USER_ID:
                 print(f"✅ Autenticado! User ID: {USER_ID}\n")
@@ -596,10 +678,17 @@ if __name__ == "__main__":
                 print("✅ Autenticado!\n")
             usar_oauth = 's'
         else:
+            auth_status = 'error'
+            auth_error_message = 'Falha ao obter token. Verifique CLIENT_SECRET e Redirect URI.'
             print("❌ Erro ao obter token. Verifique CLIENT_SECRET e Redirect URI.\n")
+            # Aguarde o browser atualizar a página e exibir o erro
+            time.sleep(5)
             sys.exit(1)
     else:
+        auth_status = 'error'
+        auth_error_message = 'Não recebi o código (timeout).'
         print("❌ Não recebi o código (timeout).")
+        time.sleep(5)
         sys.exit(1)
 
     url = input("Cole o link da playlist do Spotify: ")

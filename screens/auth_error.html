@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Authentication Failed</title>
+    <link rel="stylesheet" href="/screens/auth_error.css">
+</head>
+<body>
+    <div class="card">
+        <div class="status-icon">
+            <svg class="icon error" viewBox="0 0 52 52">
+                <circle cx="26" cy="26" r="25" fill="none"/>
+                <line x1="16" y1="16" x2="36" y2="36"/>
+                <line x1="36" y1="16" x2="16" y2="36"/>
+            </svg>
+        </div>
+        <h1 class="title">Falha na Autenticação</h1>
+        <p class="subtitle" id="errorMessage">Não foi possível autenticar. Verifique as credenciais e tente novamente.</p>
+        <button class="button" onclick="window.close()">Fechar</button>
+    </div>
+</body>
+</html>

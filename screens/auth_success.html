@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Authentication Successful</title>
+    <link rel="stylesheet" href="/screens/auth_success.css">
+</head>
+<body>
+    <div class="card">
+        <div class="checkmark">
+            <svg viewBox="0 0 52 52">
+                <circle cx="26" cy="26" r="25" fill="none"/>
+                <path d="M14 27l7 7 17-17"/>
+            </svg>
+        </div>
+        <h1 class="title">Authentication Successful</h1>
+        <p class="subtitle">You can now return to Visual Studio Code.</p>
+        <button class="button" id="actionButton" onclick="window.close()">Return to VS Code</button>
+        <p class="auto-close"><span id="statusText">Aguardando confirmação...</span></p>
+    </div>
+    <script>
+        const statusText = document.getElementById('statusText');
+        const actionButton = document.getElementById('actionButton');
+
+        function updateStatus(status, message) {
+            if (status === 'pending') {
+                statusText.textContent = 'Autenticando...';
+                actionButton.style.display = 'none';
+            } else if (status === 'success') {
+                statusText.textContent = 'Autenticação concluída com sucesso! Você pode voltar ao VS Code.';
+                actionButton.style.display = 'inline-block';
+            } else if (status === 'error') {
+                // redireciona para a tela de erro separada
+                window.location.href = '/screens/auth_error.html';
+                return;
+            }
+        }
+
+        async function pollStatus() {
+            try {
+                const resp = await fetch('/oauth-status?_=' + Date.now(), {cache: 'no-store'});
+                if (!resp.ok) {
+                    throw new Error('Status não disponível');
+                }
+                const data = await resp.json();
+                updateStatus(data.status || 'pending', data.error || '');
+
+                if (data.status === 'success' || data.status === 'error') {
+                    return;
+                }
+            } catch (e) {
+                statusText.textContent = 'Erro ao consultar status da autenticação.';
+                actionButton.style.display = 'inline-block';
+                actionButton.textContent = 'Fechar';
+                actionButton.onclick = () => window.close();
+                return;
+            }
+            setTimeout(pollStatus, 500);
+        }
+
+        updateStatus('pending');
+        pollStatus();
+    </script>
+</body>
+</html>

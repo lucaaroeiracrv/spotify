@@ -9,7 +9,7 @@
 
 ---
 
-## 👥 Integrantes
+##  Integrantes
 
 - **Luca Aroeira**
 - **Diego Duque**
