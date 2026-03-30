@@ -17,7 +17,21 @@
         </div>
         <h1 class="title">Falha na Autenticação</h1>
         <p class="subtitle" id="errorMessage">Não foi possível autenticar. Verifique as credenciais e tente novamente.</p>
-        <button class="button" onclick="window.close()">Fechar</button>
+        <button class="button" id="closeButton">Fechar</button>
     </div>
+    <script>
+        document.getElementById('closeButton').addEventListener('click', () => {
+            window.close();
+            setTimeout(() => {
+                if (!window.closed) {
+                    const hint = document.createElement('p');
+                    hint.style.color = '#f8e6e6';
+                    hint.style.fontStyle = 'italic';
+                    hint.textContent = 'Esta aba não pode ser fechada automaticamente no seu navegador. Feche-a manualmente.';
+                    document.querySelector('.card').appendChild(hint);
+                }
+            }, 100);
+        });
+    </script>
 </body>
 </html>

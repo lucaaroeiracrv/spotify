@@ -16,8 +16,9 @@
         </div>
         <h1 class="title">Authentication Successful</h1>
         <p class="subtitle">You can now return to Visual Studio Code.</p>
-        <button class="button" id="actionButton" onclick="window.close()">Return to VS Code</button>
+        <button class="button" id="actionButton">Return to VS Code</button>
         <p class="auto-close"><span id="statusText">Aguardando confirmação...</span></p>
+        <p class="auto-close" id="closeHint" style="display:none;">Se a aba não fechar automaticamente, feche-a manualmente.</p>
     </div>
     <script>
         const statusText = document.getElementById('statusText');
@@ -58,6 +59,19 @@
             }
             setTimeout(pollStatus, 500);
         }
+
+        function closeWindow() {
+            window.close();
+            setTimeout(() => {
+                if (!window.closed) {
+                    const hint = document.getElementById('closeHint');
+                    hint.textContent = 'Esta aba não pode ser fechada automaticamente no seu navegador. Por favor, feche-a manualmente.';
+                    hint.style.display = 'block';
+                }
+            }, 100);
+        }
+
+        actionButton.addEventListener('click', closeWindow);
 
         updateStatus('pending');
         pollStatus();
