@@ -41,6 +41,7 @@ Este projeto foi desenvolvido com finalidade acadêmica, aplicando conceitos com
 - Exportação para arquivo `.txt`  
 - Cópia para área de transferência  
 - Criação automática de playlists no Spotify  
+- Geração de uma playlist de teste única com músicas pré-definidas via `gerarPlaylistTeste.py`  
 
 ---
 
@@ -125,6 +126,20 @@ OPENAI_MODEL=gpt-4o-mini
 ```bash
 python spotify-playlist-categorizer.py
 ```
+
+### 6. Gerar uma playlist de teste com músicas pré-definidas
+
+Se quiser criar **uma única playlist no Spotify** com todas as músicas da lista de teste, execute:
+
+```bash
+python gerarPlaylistTeste.py
+```
+
+Esse script:
+- autentica com sua conta Spotify;
+- busca as músicas automaticamente;
+- cria **uma única playlist** com todas elas;
+- remove duplicatas antes de adicionar as faixas.
 
 ---
 
@@ -222,6 +237,7 @@ services/
 ```
 spotify/
 ├── spotify-playlist-categorizer.py
+├── gerarPlaylistTeste.py
 ├── requirements.txt
 ├── .env.example
 ├── README.md

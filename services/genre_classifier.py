@@ -11,7 +11,8 @@ from typing import Any, Callable, Iterable
 
 RequestFunction = Callable[..., Any]
 
-CLASSIFIER_CACHE_VERSION = "2026-04-05-precision-v3"
+CLASSIFIER_CACHE_VERSION = "2026-04-05-reference-v4"
+REFERENCE_LIBRARY_FILENAME = "genre_reference_library.json"
 
 CANONICAL_LABELS = [
     "Sertanejo Tradicional",
@@ -616,6 +617,9 @@ class HybridGenreClassifier:
         self.data_dir.mkdir(parents=True, exist_ok=True)
         self.model_dir.mkdir(parents=True, exist_ok=True)
         self.cache_path = self.data_dir / "genre_prediction_cache.json"
+        self.reference_path = self.data_dir / REFERENCE_LIBRARY_FILENAME
+        self.reference_entries = self._load_reference_library()
+        self.reference_lookup, self.reference_track_only = self._build_reference_lookup(self.reference_entries)
         self.lastfm_cache: dict[str, list[str]] = {}
         self.ai_cache: dict[str, dict[str, float]] = {}
         self.session_cache: dict[str, dict[str, Any]] = self._load_prediction_cache()
@@ -630,6 +634,9 @@ class HybridGenreClassifier:
             "huggingface": {"calls": 0, "successes": 0, "failures": 0, "avg_ms": 0.0, "last_confidence": 0.0},
         }
         self.tf_learner = TensorFlowGenreLearner(CANONICAL_LABELS, self.data_dir, self.model_dir, self._log)
+        seeded_reference_examples = self._seed_reference_examples()
+        if seeded_reference_examples and self.tf_learner.model is None:
+            self.tf_learner.maybe_train(force=True, background=True)
         self.tf_revalidation_threshold = self.tf_learner.prediction_threshold
         self.ai_request_timeout = max(2.0, float(os.getenv("GENRE_AI_TIMEOUT", "4")))
         self.ai_request_retries = max(0, int(os.getenv("GENRE_AI_MAX_RETRIES", "0")))
@@ -697,6 +704,130 @@ class HybridGenreClassifier:
         provider = str(metadata.get("provider", "")).strip().lower()
         provider_scores = metadata.get("provider_scores") if isinstance(metadata.get("provider_scores"), dict) else {}
         return normalized_labels == ["Outros"] and confidence <= 0.05 and provider in {"", "none", "cache"} and not provider_scores
+
+    def _parse_reference_item(self, item: Any) -> tuple[str, list[str]]:
+        if isinstance(item, dict):
+            track_name = str(item.get("track_name", "")).strip()
+            artist_names = unique_non_empty([str(name) for name in item.get("artist_names", [])])
+            artist_label = str(item.get("artist", "")).strip()
+            if artist_label and not artist_names:
+                artist_names = unique_non_empty(re.split(r"\s*,\s*|\s*&\s*", artist_label))
+            return track_name, artist_names
+
+        text = str(item or "").strip()
+        if not text:
+            return "", []
+        parts = re.split(r"\s+[—-]\s+", text, maxsplit=1)
+        track_name = parts[0].strip()
+        if len(parts) == 1:
+            return track_name, []
+        artist_label = parts[1].strip()
+        artist_names = unique_non_empty(re.split(r"\s*,\s*|\s*&\s*", artist_label))
+        if not artist_names and artist_label:
+            artist_names = [artist_label]
+        return track_name, artist_names
+
+    def _load_reference_library(self) -> dict[str, dict[str, Any]]:
+        if not self.reference_path.exists():
+            return {}
+        try:
+            with open(self.reference_path, "r", encoding="utf-8") as file:
+                payload = json.load(file)
+        except Exception as exc:
+            self._log(f"Falha ao carregar biblioteca de referência: {exc}", level="WARN")
+            return {}
+
+        entries: dict[str, dict[str, Any]] = {}
+        if not isinstance(payload, dict):
+            return entries
+
+        for raw_label, items in payload.items():
+            canonical_label = self._canonicalize_label(str(raw_label))
+            if canonical_label not in CANONICAL_LABELS or not isinstance(items, list):
+                continue
+            for item in items:
+                track_name, artist_names = self._parse_reference_item(item)
+                if not track_name:
+                    continue
+                entry_key = f"{normalize_text(track_name)}::{normalize_text(' '.join(artist_names))}"
+                entry = entries.setdefault(
+                    entry_key,
+                    {
+                        "track_name": track_name,
+                        "artist_names": artist_names,
+                        "labels": [],
+                    },
+                )
+                if canonical_label not in entry["labels"]:
+                    entry["labels"].append(canonical_label)
+        if entries:
+            self._log(f"Biblioteca de referência carregada | exemplos={len(entries)}", level="INFO")
+        return entries
+
+    def _build_reference_lookup(
+        self,
+        entries: dict[str, dict[str, Any]],
+    ) -> tuple[dict[str, dict[str, Any]], dict[str, dict[str, Any]]]:
+        by_track_artist = dict(entries)
+        grouped_by_track: dict[str, list[dict[str, Any]]] = {}
+        for entry in entries.values():
+            track_key = normalize_text(entry.get("track_name", ""))
+            if not track_key:
+                continue
+            grouped_by_track.setdefault(track_key, []).append(entry)
+
+        by_track_only = {
+            track_key: matches[0]
+            for track_key, matches in grouped_by_track.items()
+            if len(matches) == 1 and len(matches[0].get("labels", [])) == 1
+        }
+        return by_track_artist, by_track_only
+
+    def _build_reference_example_text(self, entry: dict[str, Any]) -> str:
+        labels = unique_non_empty([str(label) for label in entry.get("labels", [])]) or ["Outros"]
+        artists = unique_non_empty([str(name) for name in entry.get("artist_names", [])])
+        parts = [
+            f"Track title: {entry.get('track_name', '')}",
+            f"Artist(s): {', '.join(artists) if artists else 'unknown'}",
+            f"Allowed labels: {', '.join(CANONICAL_LABELS)}",
+            f"Curated predominant labels: {', '.join(labels)}",
+            "This is a trusted reference example provided by the user to calibrate genre predominance.",
+        ]
+        return "\n".join(part for part in parts if part)
+
+    def _seed_reference_examples(self) -> int:
+        if not self.reference_entries:
+            return 0
+        seeded = 0
+        for entry_key, entry in self.reference_entries.items():
+            labels = [label for label in entry.get("labels", []) if label in self.tf_learner.label_to_index]
+            if not labels:
+                continue
+            weight = 2.2 if len(labels) == 1 else 1.3
+            if self.tf_learner.record_example(
+                sample_key=f"reference::{entry_key}",
+                text=self._build_reference_example_text(entry),
+                labels=labels,
+                source="reference-library",
+                confidence=0.985,
+                weight=weight,
+            ):
+                seeded += 1
+        if seeded:
+            self._log(f"Referências musicais incorporadas ao treino | novas={seeded}", level="INFO")
+        return seeded
+
+    def _lookup_reference_match(self, track_name: str, artist_names: list[str]) -> dict[str, Any] | None:
+        track_key = normalize_text(track_name)
+        artist_key = normalize_text(" ".join(unique_non_empty(artist_names)))
+        combined_key = f"{track_key}::{artist_key}"
+        entry = self.reference_lookup.get(combined_key)
+        if entry and len(entry.get("labels", [])) == 1:
+            return entry
+        fallback = self.reference_track_only.get(track_key)
+        if fallback and len(fallback.get("labels", [])) == 1:
+            return fallback
+        return None
 
     def _metadata_candidates(self, value: str) -> list[tuple[str, float]]:
         normalized = normalize_text(value)
@@ -1443,6 +1574,44 @@ class HybridGenreClassifier:
             self.cache_dirty += 1
             self._persist_prediction_cache()
             self._log(f"Feedback prioritário aplicado: {track_label} -> {', '.join(result['labels'])}", level="RESULT")
+            return result
+
+        reference_match = self._lookup_reference_match(track_name, artist_names)
+        if reference_match and not self.always_use_ai:
+            reference_labels = reference_match.get("labels", ["Outros"])
+            result = self._build_result(
+                labels=reference_labels[:max_labels],
+                confidence=0.985,
+                source="Referência",
+                provider_used="reference",
+                spotify_genres=spotify_genres,
+                lastfm_tags=[],
+                preview_url=preview_url,
+                extra_metadata={
+                    "reference_match": True,
+                    "reference_artists": reference_match.get("artist_names", []),
+                },
+            )
+            self.tf_learner.record_example(
+                sample_key=f"reference-runtime::{track_cache_key}",
+                text=self._build_context(
+                    track_name=track_name,
+                    artist_names=artist_names,
+                    album_name=album_name,
+                    spotify_genres=spotify_genres,
+                    lastfm_tags=[],
+                    preview_url=preview_url,
+                    lyrics=lyrics,
+                ),
+                labels=reference_labels,
+                source="reference-runtime",
+                confidence=0.985,
+                weight=2.4,
+            )
+            self.session_cache[track_cache_key] = result
+            self.cache_dirty += 1
+            self._persist_prediction_cache()
+            self._log(f"Referência curada aplicada: {track_label} -> {', '.join(result['labels'])}", level="RESULT")
             return result
 
         if track_cache_key in self.session_cache:
