@@ -1,15 +1,15 @@
 # 🎵 Spotify Playlist Categorizer
 
-> **Projeto acadêmico desenvolvido para fins de estudo, aprendizado e automação utilizando a API do Spotify.**
+Organizador de playlists do Spotify com **classificação por gênero dominante**, exportação em `.txt`, cópia para a área de transferência e criação automática de playlists separadas por estilo.
 
 ![Python](https://img.shields.io/badge/Python-3.10+-blue.svg)
 ![Spotify](https://img.shields.io/badge/API-Spotify-black)
-![Status](https://img.shields.io/badge/Status-Em%20desenvolvimento-yellow)
-![Projeto](https://img.shields.io/badge/Projeto-Acadêmico-purple)
+![TensorFlow](https://img.shields.io/badge/ML-TensorFlow-orange)
+![Status](https://img.shields.io/badge/Status-Ativo-green)
 
 ---
 
-##  Integrantes
+## 👥 Integrantes
 
 - **Luca Aroeira**
 - **Diego Duque**
@@ -19,96 +19,78 @@
 
 ## 📖 Sobre o projeto
 
-O **Spotify Playlist Categorizer** é uma aplicação em Python que organiza playlists do Spotify por **gênero musical** e permite automatizar a criação de playlists separadas na conta do usuário.
+O projeto lê uma playlist do Spotify, classifica cada música em um **gênero principal** e organiza o resultado em blocos como `Pop`, `Rock`, `Metal`, `Trap`, `MPB`, `Sertanejo` etc.
 
-Este projeto foi desenvolvido com finalidade acadêmica, aplicando conceitos como:
+A classificação atual usa uma abordagem **híbrida**:
 
-- Consumo de API (Spotify API)
-- Autenticação OAuth
-- Automação de tarefas
-- Manipulação de dados
-- Organização e boas práticas em Python
+1. **biblioteca de referências** por gênero;
+2. **metadados do Spotify** e contexto do artista;
+3. **tags externas opcionais** (Last.fm, Hugging Face, OpenAI);
+4. **aprendizado local incremental** com TensorFlow.
+
+> O foco do projeto é escolher **apenas o gênero mais provável** para cada faixa.
 
 ---
 
 ## ✨ Funcionalidades
 
-- Autenticação com a API do Spotify  
-- Leitura de playlists  
-- Classificação híbrida de músicas por gênero/estilo/subgênero  
-- Enriquecimento por metadados e tags musicais  
-- Fallback inteligente quando a IA não estiver configurada  
-- Exportação para arquivo `.txt`  
-- Cópia para área de transferência  
-- Criação automática de playlists no Spotify  
-- Geração de uma playlist de teste única com músicas pré-definidas via `gerarPlaylistTeste.py`  
+- autenticação OAuth com Spotify;
+- leitura de playlists públicas/privadas autorizadas;
+- classificação híbrida por gênero;
+- cache local de previsões;
+- aprendizado incremental com TensorFlow;
+- exportação para `.txt`;
+- cópia da lista para a área de transferência;
+- criação automática de playlists no Spotify por categoria;
+- geração de uma playlist única de teste com `gerarPlaylistTeste.py`.
 
 ---
 
-## ✅ Pré-requisitos
+## ✅ Requisitos
 
-Antes de começar, você precisa ter:
+- Python **3.10+**
+- dependências em `requirements.txt`
 
-- Python **3.10 ou superior**
-- Bibliotecas:
-  - `requests`
-  - `pyperclip`
-  - `python-dotenv`
-
-### Instalação das dependências:
+Instalação:
 
 ```bash
 pip install -r requirements.txt
 ```
 
-Ou manualmente:
+Dependências atuais:
 
-```bash
-pip install requests pyperclip python-dotenv
-```
+- `requests`
+- `pyperclip`
+- `python-dotenv`
+- `tensorflow`
 
 ---
 
-## 🚀 Como executar
+## ⚙️ Configuração
 
-### 1. Clone o repositório
+### 1. Criar app no Spotify
 
-```bash
-git clone <seu_repositorio>
-cd spotify
+Acesse o dashboard:
+
+```text
+https://developer.spotify.com/dashboard
 ```
 
-### 2. Instale as dependências
+Crie um app e configure a Redirect URI:
 
-```bash
-pip install -r requirements.txt
-```
-
-### 3. Configure o Spotify
-
-1. Acesse: https://developer.spotify.com/dashboard  
-2. Clique em **Create an App**  
-3. Crie o aplicativo  
-4. Adicione a Redirect URI:
-
-```
+```text
 http://127.0.0.1:8888/callback
 ```
 
-5. Copie:
-- Client ID  
-- Client Secret  
+### 2. Criar o `.env`
 
----
-
-### 4. Crie o arquivo `.env`
+Use o `.env.example` como base:
 
 ```env
-SPOTIFY_CLIENT_ID=SEU_CLIENT_ID
-SPOTIFY_CLIENT_SECRET=SEU_CLIENT_SECRET
+SPOTIFY_CLIENT_ID=SEU_CLIENT_ID_AQUI
+SPOTIFY_CLIENT_SECRET=SEU_CLIENT_SECRET_AQUI
 SPOTIFY_REDIRECT_URI=http://127.0.0.1:8888/callback
 
-# Opcionais para classificação híbrida com IA
 CLASSIFICATION_PROVIDER=auto
 GENRE_AI_ALWAYS_ON=false
 LASTFM_API_KEY=
@@ -117,136 +99,140 @@ OPENAI_API_KEY=
 OPENAI_MODEL=gpt-4o-mini
 ```
 
-> ⚠️ Nunca envie o `.env` para o GitHub.
+> ⚠️ O arquivo `.env` não deve ser enviado para o GitHub.
 
 ---
 
-### 5. Execute o projeto
+## 🚀 Como executar
+
+### Classificar uma playlist
 
 ```bash
 python spotify-playlist-categorizer.py
 ```
 
-### 6. Gerar uma playlist de teste com músicas pré-definidas
+Fluxo básico:
 
-Se quiser criar **uma única playlist no Spotify** com todas as músicas da lista de teste, execute:
+1. autorizar a conta no navegador;
+2. colar o link da playlist;
+3. ver as músicas agrupadas por gênero;
+4. escolher entre copiar, salvar ou criar playlists no Spotify.
+
+### Gerar playlist de teste
 
 ```bash
 python gerarPlaylistTeste.py
 ```
 
-Esse script:
-- autentica com sua conta Spotify;
-- busca as músicas automaticamente;
-- cria **uma única playlist** com todas elas;
-- remove duplicatas antes de adicionar as faixas.
+Esse script autentica a conta e cria **uma playlist única** com as músicas de teste predefinidas no código.
 
 ---
 
-## 🔐 Configuração e segurança
+## 🧠 Arquitetura da classificação
 
-- As credenciais ficam no `.env`
-- O `.env` está no `.gitignore`
-- Tokens não são salvos em disco
-- Autenticação feita via OAuth
-- A categorização agora suporta pipeline híbrido com `Spotify + Last.fm + OpenAI/Hugging Face`
-- Se nenhuma API externa for configurada, o sistema usa fallback local aprimorado
-- Escopos utilizados:
+O núcleo do projeto está em `services/genre_classifier.py`.
 
-```
-playlist-modify-public playlist-modify-private
-```
+### Fontes usadas pela classificação
 
----
+- **`data/genre_reference_library.json`**  
+  Base de músicas de referência por gênero.
 
-## 🧪 Exemplo de uso
+- **Metadados do Spotify**  
+  Gêneros do artista, nome da faixa, álbum e contexto.
 
-```
-=== SPOTIFY PLAYLIST ORGANIZER ===
-Autorização necessária. O navegador será aberto.
-Aguardando autorização...
+- **APIs opcionais**  
+  - Last.fm → tags musicais adicionais  
+  - Hugging Face / OpenAI → classificação semântica complementar
 
-✅ Autenticado!
-
-Cole o link da playlist:
-https://open.spotify.com/playlist/...
-
-Escolha uma opção:
-1 - Copiar
-2 - Salvar
-3 - Copiar + Salvar
-4 - Criar playlists por gênero
-
-🎵 Criando playlists...
-✅ Concluído!
-```
-
----
-
-## 📌 Como usar
-
-1. Execute o script  
-2. Autorize no navegador  
-3. Cole o link da playlist  
-4. Escolha a ação desejada  
-
----
-
-## 🧰 Solução de problemas
-
-| Problema | Solução |
-|----------|--------|
-| INVALID_CLIENT | Verifique a Redirect URI |
-| Timeout | Porta 8888 pode estar ocupada |
-| Erro 401 | Refaça a autenticação |
-| Erro 429 | Aguarde e tente novamente |
-| Módulos faltando | Rode `pip install -r requirements.txt` |
-
----
-
-## 🤖 Nova arquitetura de categorização
-
-O projeto começou a migrar para uma abordagem híbrida:
-
-1. `Spotify API` para metadados e artistas  
-2. `Last.fm` para tags musicais adicionais  
-3. `OpenAI` ou `Hugging Face` para classificação semântica  
-4. `Fallback inteligente` para manter robustez mesmo sem IA externa  
-
-Os módulos principais agora ficam em:
-
-```text
-services/
-└── genre_classifier.py
-```
-
----
-
-## 💡 Melhorias futuras
-
-- Classificação por áudio (`preview_url`)  
-- Filtro de gêneros  
-- Remoção de duplicatas  
-- Exportação para Excel/CSV  
-- Interface gráfica  
+- **Modelo local TensorFlow**  
+  Aprende com exemplos confirmados e refina bordas difíceis como:
+  - `Eletrônica` × `Pop`
+  - `Rock` × `Metal`
+  - `Boom Bap` × `Rap`
+  - `Sertanejo` × `Sertanejo Universitário`
 
 ---
 
 ## 📂 Estrutura do projeto
 
-```
+```text
 spotify/
-├── spotify-playlist-categorizer.py
-├── gerarPlaylistTeste.py
+├── spotify-playlist-categorizer.py   # script principal
+├── gerarPlaylistTeste.py             # gera playlist única de teste
+├── services/
+│   ├── __init__.py
+│   └── genre_classifier.py           # motor de classificação
+├── data/
+│   ├── genre_reference_library.json  # base de referência por gênero
+│   ├── genre_learning_samples.json   # amostras para treino incremental
+│   └── genre_prediction_cache.json   # cache local de previsões
+├── models/
+│   ├── genre_classifier.keras        # modelo TensorFlow treinado
+│   └── genre_classifier_meta.json    # metadados do modelo
+├── screens/
+│   ├── auth_success.html
+│   ├── auth_success.css
+│   ├── auth_error.html
+│   └── auth_error.css
 ├── requirements.txt
 ├── .env.example
 ├── README.md
+└── explain.md                        # explicação de cada arquivo
 ```
 
 ---
 
-## ✉️ Considerações finais
+## 📄 Arquivo extra de explicação
 
-Este projeto foi desenvolvido com fins acadêmicos, com foco em aprendizado prático de integração com APIs, automação e boas práticas de desenvolvimento.
+Foi criado um arquivo chamado **`explain.md`** com a função de cada arquivo e pasta do projeto.
 
-Sinta-se à vontade para contribuir ou adaptar o projeto para seus próprios estudos 🚀
+---
+
+## 🧪 Exemplo de uso
+
+```text
+Cole o link da playlist do Spotify:
+https://open.spotify.com/playlist/...
+
+Carregando músicas da playlist... Pronto!
+
+-------------(POP)-------------
+Flowers - Miley Cyrus
+Roar - Katy Perry
+...
+```
+
+---
+
+## 🧰 Solução de problemas
+
+| Problema | Possível solução |
+|---|---|
+| `INVALID_CLIENT` | confira `CLIENT_ID`, `CLIENT_SECRET` e Redirect URI |
+| `401 Unauthorized` | refaça a autenticação |
+| `429 Too Many Requests` | aguarde alguns segundos e tente de novo |
+| porta `8888` ocupada | altere o callback no `.env` e no app do Spotify |
+| erro ao salvar `.txt` | o nome da playlist é sanitizado automaticamente para Windows |
+| dependências ausentes | rode `pip install -r requirements.txt` |
+
+---
+
+## 💡 Próximas melhorias possíveis
+
+- adicionar novos gêneros como `Forró`, `Piseiro`, `Dancehall` e `Indie`;
+- usar mais sinais de áudio (`preview_url`, BPM, energia, dançabilidade);
+- exportar para CSV/Excel;
+- criar interface gráfica.
+
+---
+
+## ✉️ Observação final
+
+Este projeto é acadêmico, mas já está estruturado para estudo sério de:
+
+- integração com APIs;
+- autenticação OAuth;
+- classificação híbrida por regras + IA;
+- persistência local e treino incremental.
+
+Se quiser expandir o projeto, o melhor ponto de entrada é `services/genre_classifier.py`.
