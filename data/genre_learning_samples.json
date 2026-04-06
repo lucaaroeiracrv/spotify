@@ -1,0 +1,103 @@
+{
+  "samples": [
+    {
+      "key": "feedback::roar::katy perry",
+      "text": "Track title: Roar\nArtist(s): Katy Perry\nAlbum: PRISM\nConfirmed predominant labels: Pop\nRule: prioritize Pop over Rock for radio-mainstream, commercial pop, pop-rock leve, synth-pop or dance-pop tracks.\nSignals: radio mainstream, dance pop, anthemic chorus, global chart hit",
+      "labels": [
+        "Pop"
+      ],
+      "source": "feedback-seed",
+      "confidence": 0.99,
+      "weight": 4.5,
+      "updated_at": 1775440493
+    },
+    {
+      "key": "feedback::maps::maroon 5",
+      "text": "Track title: Maps\nArtist(s): Maroon 5\nAlbum: V\nConfirmed predominant labels: Pop\nRule: prioritize Pop over Rock for radio-mainstream, commercial pop, pop-rock leve, synth-pop or dance-pop tracks.\nSignals: mainstream pop, pop rock leve, radio hit, catchy hook",
+      "labels": [
+        "Pop"
+      ],
+      "source": "feedback-seed",
+      "confidence": 0.99,
+      "weight": 4.3,
+      "updated_at": 1775440493
+    },
+    {
+      "key": "feedback::payphone::maroon 5",
+      "text": "Track title: Payphone\nArtist(s): Maroon 5\nAlbum: Overexposed\nConfirmed predominant labels: Pop\nRule: prioritize Pop over Rock for radio-mainstream, commercial pop, pop-rock leve, synth-pop or dance-pop tracks.\nSignals: mainstream pop, radio hit, pop crossover, hook forte",
+      "labels": [
+        "Pop"
+      ],
+      "source": "feedback-seed",
+      "confidence": 0.99,
+      "weight": 4.4,
+      "updated_at": 1775440493
+    },
+    {
+      "key": "feedback::high hopes::panic at the disco",
+      "text": "Track title: High Hopes\nArtist(s): Panic! At The Disco\nAlbum: Pray for the Wicked\nConfirmed predominant labels: Pop\nRule: prioritize Pop over Rock for radio-mainstream, commercial pop, pop-rock leve, synth-pop or dance-pop tracks.\nSignals: mainstream pop anthem, charts, bright pop production",
+      "labels": [
+        "Pop"
+      ],
+      "source": "feedback-seed",
+      "confidence": 0.99,
+      "weight": 4.0,
+      "updated_at": 1775440493
+    },
+    {
+      "key": "feedback::flowers::miley cyrus",
+      "text": "Track title: Flowers\nArtist(s): Miley Cyrus\nAlbum: Endless Summer Vacation\nConfirmed predominant labels: Pop\nRule: prioritize Pop over Rock for radio-mainstream, commercial pop, pop-rock leve, synth-pop or dance-pop tracks.\nSignals: dance pop, mainstream pop, global chart hit",
+      "labels": [
+        "Pop"
+      ],
+      "source": "feedback-seed",
+      "confidence": 0.99,
+      "weight": 4.6,
+      "updated_at": 1775440493
+    },
+    {
+      "key": "feedback::blank space::taylor swift",
+      "text": "Track title: Blank Space\nArtist(s): Taylor Swift\nAlbum: 1989\nConfirmed predominant labels: Pop\nRule: prioritize Pop over Rock for radio-mainstream, commercial pop, pop-rock leve, synth-pop or dance-pop tracks.\nSignals: pure pop, mainstream pop, chart hit, synth pop",
+      "labels": [
+        "Pop"
+      ],
+      "source": "feedback-seed",
+      "confidence": 0.99,
+      "weight": 4.6,
+      "updated_at": 1775440493
+    },
+    {
+      "key": "feedback::firework::katy perry",
+      "text": "Track title: Firework\nArtist(s): Katy Perry\nAlbum: Teenage Dream\nConfirmed predominant labels: Pop\nRule: prioritize Pop over Rock for radio-mainstream, commercial pop, pop-rock leve, synth-pop or dance-pop tracks.\nSignals: anthemic pop, radio mainstream, commercial pop",
+      "labels": [
+        "Pop"
+      ],
+      "source": "feedback-seed",
+      "confidence": 0.99,
+      "weight": 4.5,
+      "updated_at": 1775440493
+    },
+    {
+      "key": "feedback::counting stars::onerepublic",
+      "text": "Track title: Counting Stars\nArtist(s): OneRepublic\nAlbum: Native\nConfirmed predominant labels: Pop\nRule: prioritize Pop over Rock for radio-mainstream, commercial pop, pop-rock leve, synth-pop or dance-pop tracks.\nSignals: mainstream pop, pop rock leve, radio hit",
+      "labels": [
+        "Pop"
+      ],
+      "source": "feedback-seed",
+      "confidence": 0.99,
+      "weight": 3.8,
+      "updated_at": 1775440493
+    },
+    {
+      "key": "feedback::sucker::jonas brothers",
+      "text": "Track title: Sucker\nArtist(s): Jonas Brothers\nAlbum: Happiness Begins\nConfirmed predominant labels: Pop\nRule: prioritize Pop over Rock for radio-mainstream, commercial pop, pop-rock leve, synth-pop or dance-pop tracks.\nSignals: mainstream pop, radio hit, pop band",
+      "labels": [
+        "Pop"
+      ],
+      "source": "feedback-seed",
+      "confidence": 0.99,
+      "weight": 3.9,
+      "updated_at": 1775440493
+    }
+  ]
+}

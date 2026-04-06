@@ -1,0 +1,25 @@
+{
+  "sample_count": 9,
+  "labels": [
+    "Sertanejo Tradicional",
+    "Sertanejo Universitário",
+    "Sertanejo",
+    "Samba",
+    "Pagode",
+    "Trap",
+    "Trap Nacional",
+    "Rap",
+    "Boom Bap",
+    "Funk",
+    "Rock",
+    "Rock Nacional",
+    "Metal",
+    "Pop",
+    "Eletrônica",
+    "Reggae",
+    "MPB",
+    "Outros"
+  ],
+  "updated_at": 1775440394,
+  "version": "2026-04-05-precision-v3"
+}

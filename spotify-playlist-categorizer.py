@@ -10,10 +10,9 @@ from urllib.parse import urlencode, parse_qs
 from http.server import HTTPServer, BaseHTTPRequestHandler
 import threading
 from requests.adapters import HTTPAdapter
-from urllib3.util import Retry
-import re
-import unicodedata
 from dotenv import load_dotenv
+
+from services.genre_classifier import HybridGenreClassifier
 
 # Carrega variáveis de ambiente do arquivo .env
 load_dotenv()
@@ -24,6 +23,12 @@ load_dotenv()
 CLIENT_ID = os.getenv('SPOTIFY_CLIENT_ID', '').strip()
 CLIENT_SECRET = os.getenv('SPOTIFY_CLIENT_SECRET', '').strip()
 REDIRECT_URI = os.getenv('SPOTIFY_REDIRECT_URI', 'http://127.0.0.1:8888/callback').strip()
+LASTFM_API_KEY = os.getenv('LASTFM_API_KEY', '').strip()
+HUGGINGFACE_API_KEY = os.getenv('HUGGINGFACE_API_KEY', '').strip()
+OPENAI_API_KEY = os.getenv('OPENAI_API_KEY', '').strip()
+OPENAI_MODEL = os.getenv('OPENAI_MODEL', 'gpt-4o-mini').strip()
+CLASSIFICATION_PROVIDER = os.getenv('CLASSIFICATION_PROVIDER', 'auto').strip().lower()
+GENRE_AI_ALWAYS_ON = os.getenv('GENRE_AI_ALWAYS_ON', 'false').strip().lower() in {'1', 'true', 'yes', 'y', 's'}
 
 TOKEN = None
 USER_ID = None
@@ -31,13 +36,15 @@ auth_code_received = None
 auth_received_time = None
 auth_status = 'idle'  # 'idle', 'pending', 'success', 'error'
 auth_error_message = ''
+GENRE_CLASSIFIER = None
 
 # Network / retry settings
-REQUEST_TIMEOUT = 10  # seconds for requests
-MAX_RETRIES = 5
-BACKOFF_FACTOR = 0.5
+REQUEST_TIMEOUT = 8  # seconds for regular requests
+MAX_RETRIES = 2
+BACKOFF_FACTOR = 0.25
+MAX_BACKOFF_WAIT = 1.0
 
-# Create a requests.Session with retries/backoff for resilient API calls
+# Create a requests.Session with explicit retry handling in request_with_retries
 SESSION = None
 
 def create_session():
@@ -45,22 +52,7 @@ def create_session():
     if SESSION is not None:
         return SESSION
     session = requests.Session()
-    try:
-        retry = Retry(
-            total=MAX_RETRIES,
-            backoff_factor=BACKOFF_FACTOR,
-            status_forcelist=[429, 500, 502, 503, 504],
-            allowed_methods=frozenset(["GET", "POST", "PUT", "DELETE", "HEAD"]),
-        )
-    except TypeError:
-        # older urllib3 uses 'method_whitelist'
-        retry = Retry(
-            total=MAX_RETRIES,
-            backoff_factor=BACKOFF_FACTOR,
-            status_forcelist=[429, 500, 502, 503, 504],
-            method_whitelist=frozenset(["GET", "POST", "PUT", "DELETE", "HEAD"]),
-        )
-    adapter = HTTPAdapter(max_retries=retry)
+    adapter = HTTPAdapter(max_retries=0)
     session.mount('https://', adapter)
     session.mount('http://', adapter)
     SESSION = session
@@ -68,221 +60,74 @@ def create_session():
 
 
 def request_with_retries(method, url, **kwargs):
-    """Make HTTP request using the global session with retries and handle 429 Retry-After.
-
-    Returns a requests.Response or None on unrecoverable error.
-    """
+    """Make HTTP requests with small, bounded retries and no long blocking backoff."""
     session = create_session()
-    attempt = 0
-    while attempt <= MAX_RETRIES:
-        attempt += 1
+    timeout = kwargs.pop('_timeout', REQUEST_TIMEOUT)
+    max_retries = max(0, int(kwargs.pop('_max_retries', MAX_RETRIES)))
+    backoff_factor = max(0.0, float(kwargs.pop('_backoff_factor', BACKOFF_FACTOR)))
+    max_backoff_wait = max(0.0, float(kwargs.pop('_max_backoff_wait', MAX_BACKOFF_WAIT)))
+    retry_statuses = set(kwargs.pop('_retry_statuses', {429, 500, 502, 503, 504}))
+    respect_retry_after = bool(kwargs.pop('_respect_retry_after', True))
+    request_label = kwargs.pop('_request_label', url)
+
+    total_attempts = max_retries + 1
+    for attempt in range(1, total_attempts + 1):
         try:
-            resp = session.request(method, url, timeout=REQUEST_TIMEOUT, **kwargs)
+            resp = session.request(method, url, timeout=timeout, **kwargs)
         except requests.exceptions.RequestException as e:
-            if attempt > MAX_RETRIES:
+            if attempt >= total_attempts:
                 print(f"Erro de conexão ({e}) ao acessar: {url}")
                 return None
-            sleep_time = BACKOFF_FACTOR * (2 ** (attempt - 1))
-            time.sleep(sleep_time)
+
+            sleep_time = min(backoff_factor * (2 ** (attempt - 1)), max_backoff_wait)
+            if sleep_time > 0:
+                print(
+                    f"Falha temporária em {request_label}; nova tentativa em {sleep_time:.1f}s "
+                    f"({attempt}/{total_attempts})."
+                )
+                time.sleep(sleep_time)
             continue
 
-        # If rate limited, respect Retry-After if present
-        if resp is not None and resp.status_code == 429:
+        if resp is not None and resp.status_code in retry_statuses:
+            if attempt >= total_attempts:
+                return resp
+
+            if resp.status_code == 429 and not respect_retry_after:
+                return resp
+
             retry_after = resp.headers.get('Retry-After')
             try:
-                wait = int(retry_after) if retry_after is not None else BACKOFF_FACTOR * (2 ** (attempt - 1))
+                wait = float(retry_after) if retry_after is not None else backoff_factor * (2 ** (attempt - 1))
             except Exception:
-                wait = BACKOFF_FACTOR * (2 ** (attempt - 1))
-            print(f"Recebi 429; aguardando {wait} segundos antes de tentar novamente...")
-            time.sleep(wait)
+                wait = backoff_factor * (2 ** (attempt - 1))
+
+            wait = min(wait, max_backoff_wait)
+            if wait > 0:
+                print(
+                    f"Recebi {resp.status_code} em {request_label}; aguardando {wait:.1f}s "
+                    f"antes de tentar novamente..."
+                )
+                time.sleep(wait)
             continue
 
         return resp
+
     return None
 
-# Mapeamento de gêneros específicos para categorias principais
-# Dica: adicione novos termos aqui conforme necessário
-GENRE_KEYWORDS = {
-
-    # =======================
-    # SERTANEJO
-    # =======================
-    "Sertanejo Tradicional": {
-        "sertanejo tradicional", "sertanejo raiz", "moda de viola",
-        "modao", "modão", "viola caipira", "música caipira",
-        "musica caipira", "sertanejo antigo", "folk brasileiro",
-    },
-
-    "Sertanejo Universitário": {
-        "sertanejo universitário", "sertanejo universitario",
-        "sertanejo pop",
-    },
-
-    "Sertanejo": {
-        "sertanejo", "agronejo", "country brasileiro",
-        "arrocha", "piseiro", "pisadinha", "forró", "forro",
-        "brega", "tecnobrega", "seresta",
-    },
-
-    # =======================
-    # SAMBA / PAGODE
-    # =======================
-    "Samba": {
-        "samba", "samba carioca", "samba paulista", "samba raiz",
-        "samba de roda", "samba-enredo", "samba de terreiro",
-        "samba de gafieira", "axé", "axe",
-    },
-
-    "Pagode": {
-        "pagode", "pagode romântico", "pagode romantico",
-        "pagode sentimental", "pagode anos 90", "pagode moderno",
-        "pagode baiano", "nova mpb", "mpb", "brazilian pop",
-    },
-
-    # =======================
-    # RAP / TRAP / FUNK
-    # =======================
-    "Trap": {
-        "trap", "brazilian trap", "trap brasileiro",
-        "trap nacional", "trap funk", "drill", "drill brasileiro",
-    },
-
-    "Boom Bap": {
-        "boom bap", "boom-bap", "old school rap",
-        "classic hip hop", "brazilian hip hop",
-    },
-
-    "Funk": {
-        "funk", "brazilian funk", "funk brasileiro",
-        "funk carioca", "funk consciente", "funk melody",
-        "funk pop", "funk de bh", "brega funk", "150 bpm",
-    },
-
-    # =======================
-    # ROCK
-    # =======================
-    "Rock": {
-        "rock", "alternative rock", "indie rock", "garage rock",
-        "grunge", "hard rock", "classic rock", "psychedelic rock",
-        "soft rock", "punk rock", "post-punk", "new wave",
-    },
-
-    "Rock Brasileiro": {
-        "rock brasileiro", "rock nacional", "pop rock brasileiro",
-        "indie brasileiro", "alternativo brasileiro",
-    },
-
-    # =======================
-    # METAL
-    # =======================
-    "Metal": {
-        "metal", "heavy metal", "thrash metal", "death metal",
-        "black metal", "doom metal", "power metal", "nu metal",
-        "metalcore", "deathcore", "industrial metal",
-        "metal brasileiro",
-    },
-
-    # =======================
-    # POP
-    # =======================
-    "Pop": {
-        "pop", "dance pop", "electropop", "synthpop",
-        "indie pop", "alt pop", "teen pop", "pop rock",
-        "pop internacional",
-    },
-
-    # =======================
-    # ELETRÔNICA
-    # =======================
-    "Eletrônica": {
-        "electronic", "eletronica", "eletrônica", "edm",
-        "house", "deep house", "tech house", "progressive house",
-        "techno", "minimal techno", "trance", "psytrance",
-        "drum and bass", "dnb", "dubstep", "hardstyle",
-        "electro house",
-    },
-
-    # =======================
-    # REGGAE
-    # =======================
-    "Reggae": {
-        "reggae", "roots reggae", "reggae brasileiro",
-        "dub", "dancehall",
-    },
-
-    # =======================
-    # R&B / SOUL
-    # =======================
-    "R&B / Soul": {
-        "r&b", "soul", "neo soul", "contemporary r&b",
-        "alternative r&b", "quiet storm",
-    },
-
-    # =======================
-    # LATINO
-    # =======================
-    "Latino": {
-        "latin", "latino", "latin pop", "reggaeton",
-        "bachata", "salsa", "merengue",
-    },
-
-    # =======================
-    # JAZZ / CLÁSSICA
-    # =======================
-    "Jazz": {
-        "jazz", "smooth jazz", "jazz fusion",
-        "bossa jazz", "latin jazz",
-    },
-
-    "Clássica": {
-        "classical", "classica", "clássica",
-        "orchestral", "instrumental classical",
-        "symphonic",
-    },
-}
-
-
-def normalize_string(text: str) -> str:
-    if not text:
-        return ""
-    text = text.strip().lower()
-    text = unicodedata.normalize("NFKD", text)
-    text = "".join([c for c in text if not unicodedata.combining(c)])
-    text = re.sub(r"[^a-z0-9\s]+", " ", text)
-    text = re.sub(r"\s+", " ", text)
-    return text.strip()
-
-def normalize_genre_name(genre: str) -> str:
-    return normalize_string(genre)
-
-def _keyword_matches(normalized_genre: str, keyword: str) -> bool:
-    normalized_keyword = normalize_genre_name(keyword)
-    if not normalized_keyword:
-        return False
-    # Regex com bordas de palavra, mas aceitando espaços internos
-    pattern = r"\b" + re.escape(normalized_keyword).replace(r"\ ", r"\s+") + r"\b"
-    return re.search(pattern, normalized_genre) is not None
-
-def map_genre_to_main(genre: str) -> str | None:
-    normalized = normalize_genre_name(genre)
-    if not normalized:
-        return None
-    for main_genre, keywords in GENRE_KEYWORDS.items():
-        for kw in keywords:
-            if _keyword_matches(normalized, kw):
-                return main_genre
-    return None
-
-def choose_main_genres(genres: list[str], max_categories: int = 2) -> list[str]:
-    candidates = []
-    for g in genres:
-        main = map_genre_to_main(g)
-        if main and main not in candidates:
-            candidates.append(main)
-
-    if not candidates:
-        return ["Outros"]
-    return candidates[:max_categories]
+def get_genre_classifier():
+    global GENRE_CLASSIFIER
+    if GENRE_CLASSIFIER is None:
+        GENRE_CLASSIFIER = HybridGenreClassifier(
+            request_func=request_with_retries,
+            lastfm_api_key=LASTFM_API_KEY,
+            huggingface_api_key=HUGGINGFACE_API_KEY,
+            openai_api_key=OPENAI_API_KEY,
+            provider=CLASSIFICATION_PROVIDER,
+            openai_model=OPENAI_MODEL,
+            always_use_ai=GENRE_AI_ALWAYS_ON,
+            verbose=True,
+        )
+    return GENRE_CLASSIFIER
 
 #region ideias
 # 1. Salvar a lista em um arquivo
@@ -438,6 +283,7 @@ def get_playlist_tracks(playlist_url):
     tracks = []
     params = {"limit": 100, "offset": 0}
     artist_genre_cache = {}
+    classifier = get_genre_classifier()
 
     # Descobrir o total de faixas para a barra de progresso
     total_tracks = None
@@ -459,24 +305,53 @@ def get_playlist_tracks(playlist_url):
     processed = 0
 
     while True:
+        batch_started = time.perf_counter()
+        batch_count = len(items)
+
         for item in items:
-            track = item['track']
+            track = item.get('track')
             if track:
-                name = track['name']
-                artist = track['artists'][0]['name']
-                artist_id = track['artists'][0]['id']
-                track_uri = track['uri']  # Adicionar URI da música
-                genres = get_artist_genre(artist_id, headers, artist_genre_cache)
-                generos_principais = choose_main_genres(genres, max_categories=2)
+                name = track.get('name', 'Faixa sem nome')
+                artists = track.get('artists') or []
+                artist_names = [artist.get('name') for artist in artists if artist and artist.get('name')]
+                artist_ids = [artist.get('id') for artist in artists if artist and artist.get('id')]
+                artist_label = ", ".join(artist_names) if artist_names else "Artista desconhecido"
+                album_name = (track.get('album') or {}).get('name', '')
+                track_uri = track.get('uri')
+                preview_url = track.get('preview_url')
+
+                genres = []
+                for artist_id in artist_ids:
+                    genres.extend(get_artist_genre(artist_id, headers, artist_genre_cache))
+                genres = list(dict.fromkeys(genres))
+
+                classificacao = classifier.classify_track(
+                    track_name=name,
+                    artist_names=artist_names,
+                    spotify_genres=genres,
+                    album_name=album_name,
+                    preview_url=preview_url,
+                )
+
                 tracks.append({
-                    "musica": f"{name} - {artist}",
-                    "artista": artist,
+                    "musica": f"{name} - {artist_label}",
+                    "artista": artist_label,
+                    "artistas": artist_names,
+                    "album": album_name,
                     "generos": genres,
-                    "generos_principais": generos_principais,
-                    "uri": track_uri  # Guardar URI para criar playlists
+                    "generos_principais": classificacao.get("labels", ["Outros"]),
+                    "classificacao": classificacao,
+                    "uri": track_uri,
                 })
             processed += 1
             loading_bar(processed, total_tracks)
+
+        batch_elapsed = time.perf_counter() - batch_started
+        if batch_count:
+            average_ms = (batch_elapsed * 1000) / max(batch_count, 1)
+            print(f"\n⚡ Lote processado: {batch_count} faixas em {batch_elapsed:.2f}s ({average_ms:.0f} ms/faixa)")
+        classifier.flush_learning(wait=False)
+
         if next_url:
             response = request_with_retries("GET", next_url, headers=headers)
             if response is None:
@@ -492,6 +367,7 @@ def get_playlist_tracks(playlist_url):
             next_url = data.get('next')
         else:
             break
+    classifier.flush_learning(wait=False)
     print("\nCarregando músicas da playlist... Pronto!")
     return tracks
 
@@ -690,6 +566,12 @@ if __name__ == "__main__":
         print("❌ Não recebi o código (timeout).")
         time.sleep(5)
         sys.exit(1)
+
+    print("🎯 Categorização inteligente ativada: IA primeiro, cache persistente e aprendizado TensorFlow local.")
+    if not any([LASTFM_API_KEY, HUGGINGFACE_API_KEY, OPENAI_API_KEY]):
+        print("ℹ️ Nenhuma API externa configurada. O script usará metadados do Spotify com fallback local aprimorado.\n")
+    else:
+        print(f"ℹ️ Provider de classificação configurado: {CLASSIFICATION_PROVIDER}. Logs detalhados de IA aparecerão no terminal.\n")
 
     url = input("Cole o link da playlist do Spotify: ")
     playlist_name = get_playlist_name(url)

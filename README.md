@@ -35,7 +35,9 @@ Este projeto foi desenvolvido com finalidade acadêmica, aplicando conceitos com
 
 - Autenticação com a API do Spotify  
 - Leitura de playlists  
-- Classificação de músicas por gênero  
+- Classificação híbrida de músicas por gênero/estilo/subgênero  
+- Enriquecimento por metadados e tags musicais  
+- Fallback inteligente quando a IA não estiver configurada  
 - Exportação para arquivo `.txt`  
 - Cópia para área de transferência  
 - Criação automática de playlists no Spotify  
@@ -104,6 +106,14 @@ http://127.0.0.1:8888/callback
 SPOTIFY_CLIENT_ID=SEU_CLIENT_ID
 SPOTIFY_CLIENT_SECRET=SEU_CLIENT_SECRET
 SPOTIFY_REDIRECT_URI=http://127.0.0.1:8888/callback
+
+# Opcionais para classificação híbrida com IA
+CLASSIFICATION_PROVIDER=auto
+GENRE_AI_ALWAYS_ON=false
+LASTFM_API_KEY=
+HUGGINGFACE_API_KEY=
+OPENAI_API_KEY=
+OPENAI_MODEL=gpt-4o-mini
 ```
 
 > ⚠️ Nunca envie o `.env` para o GitHub.
@@ -124,6 +134,8 @@ python spotify-playlist-categorizer.py
 - O `.env` está no `.gitignore`
 - Tokens não são salvos em disco
 - Autenticação feita via OAuth
+- A categorização agora suporta pipeline híbrido com `Spotify + Last.fm + OpenAI/Hugging Face`
+- Se nenhuma API externa for configurada, o sistema usa fallback local aprimorado
 - Escopos utilizados:
 
 ```
@@ -177,13 +189,31 @@ Escolha uma opção:
 
 ---
 
+## 🤖 Nova arquitetura de categorização
+
+O projeto começou a migrar para uma abordagem híbrida:
+
+1. `Spotify API` para metadados e artistas  
+2. `Last.fm` para tags musicais adicionais  
+3. `OpenAI` ou `Hugging Face` para classificação semântica  
+4. `Fallback inteligente` para manter robustez mesmo sem IA externa  
+
+Os módulos principais agora ficam em:
+
+```text
+services/
+└── genre_classifier.py
+```
+
+---
+
 ## 💡 Melhorias futuras
 
+- Classificação por áudio (`preview_url`)  
 - Filtro de gêneros  
 - Remoção de duplicatas  
 - Exportação para Excel/CSV  
 - Interface gráfica  
-- Melhor categorização musical  
 
 ---
 
