@@ -11,7 +11,7 @@ from typing import Any, Callable, Iterable
 
 RequestFunction = Callable[..., Any]
 
-CLASSIFIER_CACHE_VERSION = "2026-04-05-reference-v4"
+CLASSIFIER_CACHE_VERSION = "2026-04-06-prototype-v11"
 REFERENCE_LIBRARY_FILENAME = "genre_reference_library.json"
 
 CANONICAL_LABELS = [
@@ -50,6 +50,12 @@ CANONICAL_ALIASES = {
     "trap brasileiro": "Trap Nacional",
     "trap": "Trap",
     "trap rap": "Trap",
+    "country trap": "Trap",
+    "country rap": "Trap",
+    "latin trap": "Trap",
+    "drill": "Trap",
+    "rage": "Trap",
+    "cloud rap": "Trap",
     "rap": "Rap",
     "hip hop": "Rap",
     "hiphop": "Rap",
@@ -76,6 +82,7 @@ CANONICAL_ALIASES = {
     "rock nacional": "Rock Nacional",
     "rock brasileiro": "Rock Nacional",
     "rock": "Rock",
+    "modern rock": "Rock",
     "alternative rock": "Rock",
     "indie rock": "Rock",
     "hard rock": "Rock",
@@ -85,6 +92,10 @@ CANONICAL_ALIASES = {
     "punk rock": "Rock",
     "emo rock": "Rock",
     "metal": "Metal",
+    "heavy metal": "Metal",
+    "thrash metal": "Metal",
+    "nu metal": "Metal",
+    "metalcore": "Metal",
     "pop": "Pop",
     "dance pop": "Pop",
     "synth pop": "Pop",
@@ -101,8 +112,13 @@ CANONICAL_ALIASES = {
     "afropop": "Pop",
     "acoustic pop": "Pop",
     "adult contemporary": "Pop",
+    "pop rap": "Pop",
+    "hip pop": "Pop",
+    "christian pop": "Pop",
     "r&b": "Pop",
     "rnb": "Pop",
+    "contemporary r&b": "Pop",
+    "alternative r&b": "Pop",
     "neo soul": "Pop",
     "soul": "Pop",
     "pop rock": "Pop",
@@ -130,6 +146,8 @@ CANONICAL_ALIASES = {
     "dub": "Reggae",
     "mpb": "MPB",
     "musica popular brasileira": "MPB",
+    "bossa nova": "MPB",
+    "samba cancao": "MPB",
     "outros": "Outros",
 }
 
@@ -145,6 +163,105 @@ MAINSTREAM_POP_PRIORITY_ARTISTS = {
     "katy perry",
     "taylor swift",
     "miley cyrus",
+    "dua lipa",
+    "ariana grande",
+    "olivia rodrigo",
+    "billie eilish",
+    "harry styles",
+    "sabrina carpenter",
+    "lady gaga",
+    "bruno mars",
+    "the weeknd",
+    "doja cat",
+    "realestk",
+    "forrest frank",
+}
+
+ELECTRONIC_PRIORITY_ARTISTS = {
+    "calvin harris",
+    "david guetta",
+    "avicii",
+    "zedd",
+    "kygo",
+    "marshmello",
+    "martin garrix",
+    "swedish house mafia",
+    "major lazer",
+    "dj snake",
+    "tiesto",
+    "tiësto",
+    "galantis",
+    "jonas blue",
+    "regard",
+    "seeb",
+    "meduza",
+    "alan walker",
+    "skrillex",
+    "hardwell",
+    "armin van buuren",
+}
+
+METAL_PRIORITY_ARTISTS = {
+    "metallica",
+    "sepultura",
+    "iron maiden",
+    "slayer",
+    "pantera",
+    "megadeth",
+    "slipknot",
+    "angra",
+    "krisiun",
+    "system of a down",
+    "judas priest",
+    "black sabbath",
+    "korn",
+    "lamb of god",
+    "gojira",
+    "death",
+    "cannibal corpse",
+    "behemoth",
+    "children of bodom",
+    "killswitch engage",
+}
+
+BOOM_BAP_PRIORITY_ARTISTS = {
+    "racionais mc's",
+    "racionais mc s",
+    "sabotage",
+    "facção central",
+    "faccao central",
+    "mv bill",
+    "rzo",
+    "realidade cruel",
+    "trilha sonora do gueto",
+    "snj",
+    "pentagono",
+    "pentágono",
+    "mamelo",
+}
+
+SERTANEJO_UNIVERSITARIO_PRIORITY_ARTISTS = {
+    "michel telo",
+    "michel teló",
+    "munhoz mariano",
+    "luan santana",
+    "jorge mateus",
+}
+
+SERTANEJO_MODERNO_PRIORITY_ARTISTS = {
+    "marilia mendonca",
+    "marília mendonça",
+    "henrique juliano",
+    "gusttavo lima",
+    "ana castela",
+    "lauana prado",
+    "israel rodolffo",
+    "maiara maraisa",
+    "ze neto cristiano",
+    "zé neto cristiano",
+    "guilherme benuto",
+    "hugo guilherme",
+    "agroplay",
 }
 
 PRIORITY_FEEDBACK_EXAMPLES = [
@@ -220,7 +337,277 @@ PRIORITY_FEEDBACK_EXAMPLES = [
         "weight": 3.9,
         "hints": ["mainstream pop", "radio hit", "pop band"],
     },
+    {
+        "track_name": "Rather Be",
+        "artist_names": ["Clean Bandit", "Jess Glynne"],
+        "album_name": "New Eyes",
+        "labels": ["Eletrônica"],
+        "weight": 4.4,
+        "hints": ["electronic production", "dancefloor", "house pop", "club crossover"],
+    },
+    {
+        "track_name": "Don't Let Me Down",
+        "artist_names": ["The Chainsmokers", "Daya"],
+        "album_name": "Collage",
+        "labels": ["Eletrônica"],
+        "weight": 4.3,
+        "hints": ["edm pop", "drop", "festival", "electronic duo"],
+    },
+    {
+        "track_name": "Enter Sandman",
+        "artist_names": ["Metallica"],
+        "album_name": "Metallica",
+        "labels": ["Metal"],
+        "weight": 4.7,
+        "hints": ["heavy metal", "riff pesado", "distorcao intensa", "headbang"],
+    },
+    {
+        "track_name": "Wonderwall",
+        "artist_names": ["Oasis"],
+        "album_name": "(What's The Story) Morning Glory?",
+        "labels": ["Rock"],
+        "weight": 4.1,
+        "hints": ["britpop", "guitarras", "banda", "rock"],
+    },
+    {
+        "track_name": "Vida Loka Pt. 2",
+        "artist_names": ["Racionais MC's"],
+        "album_name": "Nada Como Um Dia Após o Outro Dia",
+        "labels": ["Boom Bap"],
+        "weight": 4.8,
+        "hints": ["boom bap", "old school", "sample-based", "rap brasileiro classico"],
+    },
+    {
+        "track_name": "Bilhete 2.0",
+        "artist_names": ["Rashid"],
+        "album_name": "Portal",
+        "labels": ["Rap"],
+        "weight": 4.2,
+        "hints": ["rap brasileiro moderno", "flow", "lyrical", "hip hop"],
+    },
+    {
+        "track_name": "Ai Se Eu Te Pego",
+        "artist_names": ["Michel Teló"],
+        "album_name": "Na Balada",
+        "labels": ["Sertanejo Universitário"],
+        "weight": 4.4,
+        "hints": ["sertanejo universitario", "festa", "refrão chiclete", "radio hit"],
+    },
+    {
+        "track_name": "Leão",
+        "artist_names": ["Marília Mendonça"],
+        "album_name": "Decretos Reais",
+        "labels": ["Sertanejo"],
+        "weight": 4.6,
+        "hints": ["sofrencia", "sertanejo moderno", "romântico", "feminejo"],
+    },
+    {
+        "track_name": "Cuida Bem Dela",
+        "artist_names": ["Henrique & Juliano"],
+        "album_name": "Ao Vivo em Brasília",
+        "labels": ["Sertanejo"],
+        "weight": 4.4,
+        "hints": ["sertanejo moderno", "sofrência", "romântico", "dupla brasileira"],
+    },
+    {
+        "track_name": "Rude",
+        "artist_names": ["MAGIC!"],
+        "album_name": "Don't Kill the Magic",
+        "labels": ["Pop"],
+        "weight": 4.1,
+        "hints": ["mainstream pop", "radio hit", "pop reggae crossover", "commercial pop"],
+    },
 ]
+
+GENRE_PROTOTYPE_HINTS: dict[str, dict[str, Any]] = {
+    "Sertanejo Tradicional": {
+        "summary": "modão caipira/raiz, acústico, viola e sanfona, dueto emotivo e temática rural ou de saudade.",
+        "keywords": ["sertanejo raiz", "modao", "modão", "caipira", "moda de viola", "guarania"],
+        "instrumental": ["viola caipira", "violão", "sanfona", "acordeon"],
+        "rhythm": ["toada", "guarânia", "balada lenta", "arrasta-pé"],
+        "timbres": ["acústico", "orgânico", "rural"],
+        "vocal": ["dueto", "dupla", "voz sofrida", "interpretação sentimental"],
+        "themes": ["saudade", "amor sofrido", "interior", "estrada", "roça"],
+        "production": ["clássica", "analógica", "simples"],
+        "era": ["anos 70", "anos 80", "anos 90"],
+    },
+    "Sertanejo Universitário": {
+        "summary": "sertanejo romântico e festivo dos anos 2000/2010, refrão fácil, violão pop e produção radiofônica.",
+        "keywords": ["sertanejo universitario", "sertanejo universitário", "arrocha universitario", "agrofunk sertanejo"],
+        "instrumental": ["violão pop", "guitarra limpa", "percussão leve"],
+        "rhythm": ["midtempo", "balada romântica", "batida dançante"],
+        "timbres": ["brilhante", "comercial", "pop sertanejo"],
+        "vocal": ["dupla jovem", "refrão chiclete", "voz romântica"],
+        "themes": ["balada", "bebida", "paquera", "sofrência"],
+        "production": ["radiofônica", "polida", "mainstream"],
+        "era": ["anos 2000", "anos 2010"],
+    },
+    "Sertanejo": {
+        "summary": "sertanejo moderno dominante, sofrência, narrativa amorosa, mistura de raiz com pop e produção atual brasileira.",
+        "keywords": ["sertanejo", "sofrencia", "sofrência", "feminejo", "agronejo"],
+        "instrumental": ["violão", "guitarra clean", "sanfona pop"],
+        "rhythm": ["midtempo", "balada sertaneja", "batida contemporânea"],
+        "timbres": ["romântico", "brasileiro", "melódico"],
+        "vocal": ["dupla", "voz emotiva", "interpretação intensa"],
+        "themes": ["relacionamento", "término", "ciúme", "bar"],
+        "production": ["atual", "polida", "comercial"],
+        "era": ["anos 2010", "anos 2020"],
+    },
+    "Samba": {
+        "summary": "samba de raiz com cavaquinho, pandeiro e suingue orgânico, foco em roda, tradição e malemolência.",
+        "keywords": ["samba", "samba de raiz", "partido alto", "roda de samba"],
+        "instrumental": ["cavaquinho", "pandeiro", "surdo", "tamborim"],
+        "rhythm": ["síncope", "suingue", "roda"],
+        "timbres": ["percussivo", "orgânico", "brasileiro"],
+        "vocal": ["canto coletivo", "interpretação malandra", "resposta de coro"],
+        "themes": ["boemia", "comunidade", "resistência", "cotidiano"],
+        "production": ["orgânica", "ao vivo", "tradicional"],
+        "era": ["clássico", "tradicional"],
+    },
+    "Pagode": {
+        "summary": "pagode romântico e urbano, swing suave, refrões sentimentais e produção mais polida que o samba raiz.",
+        "keywords": ["pagode", "pagode romantico", "pagode romântico", "samba romântico"],
+        "instrumental": ["tantan", "banjo", "cavaquinho", "pandeiro"],
+        "rhythm": ["swing", "groove romântico", "midtempo"],
+        "timbres": ["leve", "romântico", "urbano"],
+        "vocal": ["lead melódico", "coro suave", "refrão sentimental"],
+        "themes": ["amor", "relacionamento", "saudade", "superação"],
+        "production": ["polida", "radiofônica"],
+        "era": ["anos 90", "anos 2000", "anos 2010"],
+    },
+    "Trap": {
+        "summary": "trap internacional com 808 forte, hi-hats rápidos, clima sombrio e flow moderno com autotune.",
+        "keywords": ["trap", "trap soul", "drill", "rage", "cloud rap", "country rap", "latin trap"],
+        "instrumental": ["808", "sub bass", "hi-hat triplado", "synth escuro"],
+        "rhythm": ["halftime", "140 bpm", "swing trap"],
+        "timbres": ["sombrio", "minimalista", "grave"],
+        "vocal": ["autotune", "flow arrastado", "melodic rap"],
+        "themes": ["flex", "lifestyle", "rua", "noite"],
+        "production": ["digital", "minimal", "moderna"],
+        "era": ["anos 2010", "anos 2020"],
+    },
+    "Trap Nacional": {
+        "summary": "trap brasileiro com estética urbana BR, 808 pesado, autotune e linguagem/cultura nacional.",
+        "keywords": ["trap nacional", "brazilian trap", "trap brasileiro", "br trap"],
+        "instrumental": ["808", "grave pesado", "synth sombrio"],
+        "rhythm": ["halftime", "groove arrastado", "batida trap"],
+        "timbres": ["escuro", "digital", "urbano"],
+        "vocal": ["autotune", "flow melódico", "português"],
+        "themes": ["favela", "luxo", "vivência", "ascensão"],
+        "production": ["moderna", "brasileira", "polida"],
+        "era": ["anos 2010", "anos 2020"],
+    },
+    "Rap": {
+        "summary": "rap/hip-hop dominante com foco em rima e flow, batida moderna ou clássica sem cair no boom bap brasileiro tradicional.",
+        "keywords": ["rap", "hip hop", "hip-hop", "conscious hip hop", "alternative hip hop", "melodic rap"],
+        "instrumental": ["beat hip hop", "drum machine", "sample"],
+        "rhythm": ["boom", "groove rap", "midtempo"],
+        "timbres": ["seco", "grave", "urbano"],
+        "vocal": ["flow", "rimas", "versos falados"],
+        "themes": ["vivência", "crítica", "autoafirmação", "narrativa urbana"],
+        "production": ["sampleada", "moderna", "street"],
+        "era": ["anos 90", "anos 2000", "anos 2010", "anos 2020"],
+    },
+    "Boom Bap": {
+        "summary": "rap brasileiro old school com bateria seca, samples clássicos, densidade lírica e estética 90s/2000s.",
+        "keywords": ["boom bap", "boombap", "boom-bap", "old school hip hop", "classic hip hop", "golden age hip hop"],
+        "instrumental": ["sample de soul", "bateria seca", "loop clássico"],
+        "rhythm": ["head-nod", "groove old school", "batida quadrada"],
+        "timbres": ["poeirento", "áspero", "cru"],
+        "vocal": ["rima densa", "flow clássico", "narrativa consciente"],
+        "themes": ["consciência", "favela", "crítica social", "resistência"],
+        "production": ["sample-based", "old school", "analógica"],
+        "era": ["anos 90", "anos 2000"],
+    },
+    "Funk": {
+        "summary": "funk brasileiro/baile funk com tamborzão, batida de pista, MC em destaque e energia corporal.",
+        "keywords": ["funk carioca", "baile funk", "funk brasileiro", "mandelão", "proibidão"],
+        "instrumental": ["tamborzão", "beat de baile", "sirene", "sub grave"],
+        "rhythm": ["130 bpm", "batidão", "dançante"],
+        "timbres": ["seco", "pesado", "percussivo"],
+        "vocal": ["mc", "chamada de baile", "canto falado"],
+        "themes": ["festa", "dança", "favela", "ostentação"],
+        "production": ["crua", "club", "urbana"],
+        "era": ["anos 2000", "anos 2010", "anos 2020"],
+    },
+    "Rock": {
+        "summary": "rock internacional guiado por guitarras, bateria acústica, riffs e identidade de banda mais forte que o apelo pop.",
+        "keywords": ["rock", "alternative rock", "hard rock", "classic rock", "indie rock", "post grunge", "pop punk"],
+        "instrumental": ["guitarra distorcida", "baixo elétrico", "bateria acústica", "riff"],
+        "rhythm": ["4/4 rock", "drive", "groove de banda"],
+        "timbres": ["guitarrudo", "orgânico", "cru"],
+        "vocal": ["voz rasgada", "banda", "refrão explosivo"],
+        "themes": ["angústia", "rebeldia", "intensidade"],
+        "production": ["ao vivo", "de banda", "guitarrista"],
+        "era": ["anos 70", "anos 80", "anos 90", "anos 2000", "anos 2010"],
+    },
+    "Rock Nacional": {
+        "summary": "rock brasileiro com linguagem e estética nacional, guitarras de banda e forte contexto BR.",
+        "keywords": ["rock nacional", "rock brasileiro", "brazilian rock"],
+        "instrumental": ["guitarra", "baixo", "bateria acústica"],
+        "rhythm": ["rock de banda", "midtempo", "drive"],
+        "timbres": ["brasileiro", "guitarrudo", "orgânico"],
+        "vocal": ["português", "banda", "refrão cantado"],
+        "themes": ["juventude", "cidade", "existencialismo", "cotidiano"],
+        "production": ["banda", "nacional", "orgânica"],
+        "era": ["anos 80", "anos 90", "anos 2000"],
+    },
+    "Metal": {
+        "summary": "metal guiado por riffs pesados, distorção intensa, agressividade e performance vocal extrema ou épica.",
+        "keywords": ["metal", "heavy metal", "thrash metal", "nu metal", "metalcore", "death metal"],
+        "instrumental": ["riff pesado", "guitarra distorcida", "duplo pedal", "baixo pesado"],
+        "rhythm": ["rápido", "quebrado", "groove pesado"],
+        "timbres": ["agressivo", "denso", "pesado"],
+        "vocal": ["gutural", "rasgado", "épico"],
+        "themes": ["força", "caos", "conflito", "fantasia"],
+        "production": ["pesada", "saturada", "high gain"],
+        "era": ["anos 80", "anos 90", "anos 2000", "anos 2010"],
+    },
+    "Pop": {
+        "summary": "pop mainstream guiado por refrão, melodia forte, produção polida, apelo radiofônico e estética acessível.",
+        "keywords": ["pop", "dance pop", "synth pop", "electropop", "commercial pop", "radio pop", "mainstream pop"],
+        "instrumental": ["synth pop", "beat dançante", "camadas brilhantes"],
+        "rhythm": ["uptempo", "dançante", "midtempo radiofônico"],
+        "timbres": ["brilhante", "limpo", "chiclete"],
+        "vocal": ["hook forte", "refrão marcante", "lead melódico"],
+        "themes": ["amor", "superação", "autoconfiança", "relacionamento"],
+        "production": ["polida", "mainstream", "global chart"],
+        "era": ["anos 2000", "anos 2010", "anos 2020"],
+    },
+    "Eletrônica": {
+        "summary": "eletrônica/EDM com synths e drops em destaque, construção de pista e produção predominantemente eletrônica.",
+        "keywords": ["edm", "electronic", "electronica", "house", "techno", "trance", "big room house", "slap house"],
+        "instrumental": ["synth lead", "drop", "build-up", "kick de pista"],
+        "rhythm": ["4-on-the-floor", "festival", "clubbing"],
+        "timbres": ["digital", "sintético", "pulsante"],
+        "vocal": ["vocal sample", "drop instrumental", "feature pop"],
+        "themes": ["euforia", "noite", "pista", "festival"],
+        "production": ["eletrônica", "dancefloor", "producer-driven"],
+        "era": ["anos 2000", "anos 2010", "anos 2020"],
+    },
+    "Reggae": {
+        "summary": "reggae com contratempo, baixo redondo, ambiência relaxada e identidade jamaicana/brasileira de roots ou pop reggae.",
+        "keywords": ["reggae", "roots reggae", "reggae pop", "dancehall", "dub"],
+        "instrumental": ["skank guitar", "baixo redondo", "órgão", "percussão leve"],
+        "rhythm": ["contratempo", "laid-back", "one drop"],
+        "timbres": ["quente", "solar", "relaxado"],
+        "vocal": ["canto suave", "coral", "toque jamaicano"],
+        "themes": ["paz", "natureza", "espiritualidade", "amor"],
+        "production": ["orgânica", "grooveada"],
+        "era": ["clássico", "roots", "anos 90", "anos 2000"],
+    },
+    "MPB": {
+        "summary": "MPB com riqueza harmônica, letra poética, sofisticação melódica e forte identidade brasileira autoral.",
+        "keywords": ["mpb", "musica popular brasileira", "música popular brasileira", "bossa", "canção brasileira"],
+        "instrumental": ["violão", "piano", "sopros leves", "percussão sutil"],
+        "rhythm": ["balada brasileira", "bossa", "samba-canção"],
+        "timbres": ["sofisticado", "orgânico", "brasileiro"],
+        "vocal": ["interpretação delicada", "poética", "cante autoral"],
+        "themes": ["poesia", "amor", "tempo", "brasilidade", "reflexão"],
+        "production": ["refinada", "acústica", "autoral"],
+        "era": ["anos 60", "anos 70", "anos 80", "anos 90", "anos 2000"],
+    },
+}
 
 TF_IMPORT_ERROR: Exception | None = None
 try:
@@ -243,6 +630,11 @@ def normalize_text(text: str | None) -> str:
     normalized = re.sub(r"[^a-z0-9\s/&-]+", " ", normalized)
     normalized = re.sub(r"\s+", " ", normalized)
     return normalized.strip()
+
+
+def prepare_text_for_model(text: str | None) -> str:
+    prepared = normalize_text(text)
+    return prepared or "unknown"
 
 
 def unique_non_empty(values: Iterable[str]) -> list[str]:
@@ -486,7 +878,7 @@ class TensorFlowGenreLearner:
             self._save_dataset(force=True)
             started_at = time.perf_counter()
             samples = list(self.samples_by_key.values())
-            texts = [str(sample.get("text", "")) for sample in samples]
+            texts = [prepare_text_for_model(str(sample.get("text", ""))) for sample in samples]
             sample_weights = [min(max(safe_float(sample.get("weight"), 1.0), 0.25), 8.0) for sample in samples]
             labels_matrix: list[list[float]] = []
             for sample in samples:
@@ -556,10 +948,11 @@ class TensorFlowGenreLearner:
                 return False
 
     def predict(self, text: str) -> dict[str, Any] | None:
-        if not self.is_ready() or not text:
+        prepared_text = prepare_text_for_model(text)
+        if not self.is_ready() or not prepared_text:
             return None
         try:
-            inference_tensor = tf.constant([text], dtype=tf.string)  # type: ignore[attr-defined]
+            inference_tensor = tf.constant([prepared_text], dtype=tf.string)  # type: ignore[attr-defined]
             raw_scores = self.model.predict(inference_tensor, verbose=0)[0].tolist()
         except Exception as exc:
             self.logger(f"Falha na inferência TensorFlow: {exc}", level="ERROR")
@@ -620,6 +1013,8 @@ class HybridGenreClassifier:
         self.reference_path = self.data_dir / REFERENCE_LIBRARY_FILENAME
         self.reference_entries = self._load_reference_library()
         self.reference_lookup, self.reference_track_only = self._build_reference_lookup(self.reference_entries)
+        self.reference_profiles = self._build_reference_profiles(self.reference_entries)
+        self.reference_prompt = self._build_reference_prompt()
         self.lastfm_cache: dict[str, list[str]] = {}
         self.ai_cache: dict[str, dict[str, float]] = {}
         self.session_cache: dict[str, dict[str, Any]] = self._load_prediction_cache()
@@ -783,6 +1178,52 @@ class HybridGenreClassifier:
         }
         return by_track_artist, by_track_only
 
+    def _build_reference_profiles(self, entries: dict[str, dict[str, Any]]) -> dict[str, dict[str, Any]]:
+        profiles: dict[str, dict[str, Any]] = {
+            label: {"artists": set(), "tracks": set(), "samples": []}
+            for label in CANONICAL_LABELS
+            if label != "Outros"
+        }
+        for entry in entries.values():
+            track_name = str(entry.get("track_name", "")).strip()
+            artists = unique_non_empty([str(name) for name in entry.get("artist_names", [])])
+            sample_label = f"{track_name} — {', '.join(artists)}" if track_name and artists else track_name
+            for label in entry.get("labels", []):
+                if label not in profiles:
+                    continue
+                profile = profiles[label]
+                if track_name:
+                    profile["tracks"].add(normalize_text(track_name))
+                    if sample_label and sample_label not in profile["samples"] and len(profile["samples"]) < 4:
+                        profile["samples"].append(sample_label)
+                for artist_name in artists:
+                    artist_key = normalize_text(artist_name)
+                    if artist_key:
+                        profile["artists"].add(artist_key)
+        return profiles
+
+    def _build_reference_prompt(self, max_examples_per_genre: int = 3) -> str:
+        lines = [
+            "Classification rules:",
+            "1. Compare the song against the user reference lists and choose only the single most probable dominant genre.",
+            "2. Consider instrumental palette, rhythm/BPM feel, predominant timbres, vocal structure, lyrical theme, production style, era and sonic aesthetics.",
+            "3. Do not rely only on the artist name; use it as a weak supporting clue only when the sound and cultural context agree.",
+            "4. In hybrid cases, prefer the sonically and culturally dominant style rather than the official marketing tag.",
+            "Reference prototypes by genre:",
+        ]
+        for label in CANONICAL_LABELS:
+            if label == "Outros":
+                continue
+            hints = GENRE_PROTOTYPE_HINTS.get(label, {})
+            summary = str(hints.get("summary", "")).strip()
+            samples = self.reference_profiles.get(label, {}).get("samples", [])[:max_examples_per_genre]
+            sample_text = "; ".join(samples)
+            line = f"- {label}: {summary}"
+            if sample_text:
+                line += f" Exemplos: {sample_text}."
+            lines.append(line.strip())
+        return "\n".join(lines)
+
     def _build_reference_example_text(self, entry: dict[str, Any]) -> str:
         labels = unique_non_empty([str(label) for label in entry.get("labels", [])]) or ["Outros"]
         artists = unique_non_empty([str(name) for name in entry.get("artist_names", [])])
@@ -819,14 +1260,29 @@ class HybridGenreClassifier:
 
     def _lookup_reference_match(self, track_name: str, artist_names: list[str]) -> dict[str, Any] | None:
         track_key = normalize_text(track_name)
+        normalized_artists = {normalize_text(name) for name in unique_non_empty(artist_names) if normalize_text(name)}
         artist_key = normalize_text(" ".join(unique_non_empty(artist_names)))
         combined_key = f"{track_key}::{artist_key}"
         entry = self.reference_lookup.get(combined_key)
         if entry and len(entry.get("labels", [])) == 1:
             return entry
-        fallback = self.reference_track_only.get(track_key)
-        if fallback and len(fallback.get("labels", [])) == 1:
-            return fallback
+
+        if track_key and normalized_artists:
+            for candidate in self.reference_lookup.values():
+                if normalize_text(candidate.get("track_name", "")) != track_key:
+                    continue
+                candidate_artists = {
+                    normalize_text(name)
+                    for name in candidate.get("artist_names", [])
+                    if normalize_text(name)
+                }
+                if candidate_artists.intersection(normalized_artists) and len(candidate.get("labels", [])) == 1:
+                    return candidate
+
+        if not normalized_artists:
+            fallback = self.reference_track_only.get(track_key)
+            if fallback and len(fallback.get("labels", [])) == 1:
+                return fallback
         return None
 
     def _metadata_candidates(self, value: str) -> list[tuple[str, float]]:
@@ -912,6 +1368,73 @@ class HybridGenreClassifier:
 
         return True
 
+    def _should_accept_tf_fallback(self, tf_prediction: dict[str, Any] | None) -> bool:
+        if not tf_prediction:
+            return False
+        tf_labels = [self._canonicalize_label(label) or str(label) for label in tf_prediction.get("labels", [])]
+        tf_confidence = safe_float(tf_prediction.get("confidence"), 0.0)
+        min_confidence = max(0.55, min(self.tf_revalidation_threshold, 0.72))
+        return bool(tf_labels) and tf_labels[0] != "Outros" and tf_confidence >= min_confidence
+
+    def _classify_from_reference_prototypes(
+        self,
+        track_name: str,
+        artist_names: list[str],
+        album_name: str,
+        spotify_genres: list[str],
+        lastfm_tags: list[str],
+    ) -> tuple[dict[str, float], dict[str, list[str]]]:
+        metadata_context = normalize_text(" ".join(unique_non_empty(spotify_genres + lastfm_tags + [album_name])))
+        cultural_context = normalize_text(" ".join(unique_non_empty(spotify_genres + lastfm_tags + [album_name, track_name])))
+        artist_keys = {normalize_text(name) for name in artist_names if normalize_text(name)}
+        if not metadata_context and not cultural_context and not artist_keys:
+            return {}, {}
+
+        aspect_weights = {
+            "keywords": 0.34,
+            "instrumental": 0.22,
+            "rhythm": 0.22,
+            "timbres": 0.18,
+            "vocal": 0.17,
+            "themes": 0.14,
+            "production": 0.16,
+            "era": 0.08,
+        }
+        scores: dict[str, float] = {}
+        evidence: dict[str, list[str]] = {}
+
+        for label, hints in GENRE_PROTOTYPE_HINTS.items():
+            label_score = 0.0
+            label_evidence: list[str] = []
+            for aspect_name, weight in aspect_weights.items():
+                target_context = cultural_context if aspect_name == "themes" else metadata_context
+                if not target_context:
+                    continue
+                matched_terms = []
+                for term in hints.get(aspect_name, []):
+                    term_key = normalize_text(term)
+                    if term_key and term_key in target_context:
+                        matched_terms.append(term)
+                if matched_terms:
+                    label_score += weight + (0.03 * max(0, len(matched_terms) - 1))
+                    label_evidence.append(f"{aspect_name}: {', '.join(matched_terms[:2])}")
+
+            profile = self.reference_profiles.get(label, {})
+            reference_artists = profile.get("artists", set())
+            if artist_keys and reference_artists:
+                overlaps = sorted(artist_keys.intersection(reference_artists))
+                if overlaps:
+                    boost = 0.14 if label_score > 0 else 0.05
+                    label_score += boost
+                    matched_artist = next((artist for artist in artist_names if normalize_text(artist) in overlaps), overlaps[0])
+                    label_evidence.append(f"artista de referência: {matched_artist}")
+
+            if label_score > 0:
+                scores[label] = min(0.99, round(label_score, 4))
+                evidence[label] = label_evidence
+
+        return scores, evidence
+
     def _apply_style_guardrails(
         self,
         scores: dict[str, float],
@@ -933,7 +1456,7 @@ class HybridGenreClassifier:
         rap_values = [normalize_text(value) for value in evidence.get("Rap", []) + evidence.get("Boom Bap", [])]
 
         pop_terms = {
-            "pop", "dance pop", "synth pop", "indie pop", "soft pop", "electropop",
+            "dance pop", "synth pop", "indie pop", "soft pop", "electropop",
             "mainstream pop", "commercial pop", "radio pop", "pop rock", "chart hit",
         }
         weak_rock_terms = {"rock", "modern rock", "pop rock", "soft rock"}
@@ -946,11 +1469,44 @@ class HybridGenreClassifier:
             "golden age hip hop", "east coast hip hop", "sample-based",
         }
         modern_rap_terms = {"trap", "drill", "melodic rap", "pluggnb", "rage", "cloud rap"}
+        trap_terms = {"trap", "trap soul", "country rap", "country trap", "drill", "rage", "cloud rap", "808"}
+        trap_national_terms = {"trap nacional", "trap brasileiro", "brazilian trap", "br trap"}
+        electronic_terms = {
+            "edm", "electronic", "electronica", "house", "techno", "trance",
+            "dubstep", "brostep", "electro house", "progressive house", "big room",
+            "slap house", "festival", "club",
+        }
+        funk_terms = {
+            "funk carioca", "baile funk", "mandelao", "mandelão", "tamborzao", "tamborzão",
+            "gaiola", "medley da gaiola", "vapo", "rebola", "rebolando", "sentadona",
+            "paredao", "paredão", "novinha", "rabetao", "rabetão",
+        }
+        forro_terms = {"forro", "forró", "piseiro", "pisadinha", "arrocha", "seresta", "vaquejada"}
 
         pop_friendly = any(any(term in value for term in pop_terms) for value in pop_values) or any(term in context for term in pop_terms)
         mainstream_band = any(artist in context for artist in MAINSTREAM_POP_PRIORITY_ARTISTS)
         strong_rock = any(any(term in value for term in strong_rock_terms) for value in rock_values) or any(term in context for term in strong_rock_terms)
         weak_rock_only = bool(rock_values) and not strong_rock and all(any(term in value for term in weak_rock_terms) for value in rock_values)
+        electronic_signal = any(term in context for term in electronic_terms)
+        funk_signal = is_brazilian_context and any(term in context for term in funk_terms)
+        forro_signal = any(term in context for term in forro_terms)
+        metal_terms = {
+            "heavy metal", "thrash metal", "nu metal", "metalcore", "death metal",
+            "black metal", "power metal", "groove metal", "progressive metal",
+        }
+        sertanejo_universitario_terms = {
+            "sertanejo universitario", "sertanejo universitário", "balada boa", "camaro amarelo",
+            "ai se eu te pego", "meteoro", "te esperando", "universitario pop",
+        }
+        sertanejo_moderno_terms = {
+            "sofrencia", "sofrência", "feminejo", "agronejo", "leao", "leão",
+            "infiel", "bloqueado", "boiadeira", "bombonzinho", "arranhao", "arranhão",
+        }
+        electronic_artist_signal = any(artist in context for artist in ELECTRONIC_PRIORITY_ARTISTS)
+        metal_artist_signal = any(artist in context for artist in METAL_PRIORITY_ARTISTS) or any(term in context for term in metal_terms)
+        boom_bap_artist_signal = is_brazilian_context and any(artist in context for artist in BOOM_BAP_PRIORITY_ARTISTS)
+        sertanejo_universitario_signal = any(artist in context for artist in SERTANEJO_UNIVERSITARIO_PRIORITY_ARTISTS) or any(term in context for term in sertanejo_universitario_terms)
+        sertanejo_moderno_signal = any(artist in context for artist in SERTANEJO_MODERNO_PRIORITY_ARTISTS) or any(term in context for term in sertanejo_moderno_terms)
 
         if pop_friendly or mainstream_band:
             adjusted["Pop"] = min(0.99, max(adjusted.get("Pop", 0.0), 0.76 if mainstream_band else 0.68) + (0.18 if mainstream_band else 0.1))
@@ -960,8 +1516,80 @@ class HybridGenreClassifier:
         if adjusted.get("Pop", 0.0) >= 0.85 and adjusted.get("Rock", 0.0) > 0 and not strong_rock:
             adjusted["Rock"] = min(adjusted["Rock"], 0.24)
 
+        if (electronic_signal or electronic_artist_signal) and not mainstream_band:
+            adjusted["Eletrônica"] = min(0.99, max(adjusted.get("Eletrônica", 0.0), 0.74 if electronic_artist_signal else adjusted.get("Eletrônica", 0.0)))
+            if adjusted.get("Pop", 0.0) > 0 and adjusted.get("Eletrônica", 0.0) >= adjusted.get("Pop", 0.0):
+                adjusted["Pop"] = min(adjusted["Pop"], 0.58)
+
+        if adjusted.get("Rock", 0.0) > 0 and (adjusted.get("Metal", 0.0) > 0 or metal_artist_signal):
+            adjusted["Metal"] = min(0.99, max(adjusted.get("Metal", 0.0), adjusted.get("Rock", 0.0) + 0.12, 0.78 if metal_artist_signal else 0.0))
+            adjusted["Rock"] = min(adjusted["Rock"], 0.38 if metal_artist_signal else 0.52)
+
+        if adjusted.get("Sertanejo", 0.0) > 0 or adjusted.get("Sertanejo Universitário", 0.0) > 0:
+            if sertanejo_universitario_signal and not sertanejo_moderno_signal:
+                adjusted["Sertanejo Universitário"] = min(0.99, max(adjusted.get("Sertanejo Universitário", 0.0), adjusted.get("Sertanejo", 0.0) + 0.1, 0.74))
+                if adjusted.get("Sertanejo", 0.0) > 0:
+                    adjusted["Sertanejo"] = min(adjusted["Sertanejo"], 0.44)
+            elif sertanejo_moderno_signal:
+                adjusted["Sertanejo"] = min(0.99, max(adjusted.get("Sertanejo", 0.0), adjusted.get("Sertanejo Universitário", 0.0) + 0.1, 0.76))
+                if adjusted.get("Sertanejo Universitário", 0.0) > 0:
+                    adjusted["Sertanejo Universitário"] = min(adjusted["Sertanejo Universitário"], 0.46)
+
+        if adjusted.get("Eletrônica", 0.0) > 0 and not electronic_signal:
+            competing_non_electronic = max(
+                adjusted.get("Pop", 0.0),
+                adjusted.get("Rap", 0.0),
+                adjusted.get("Trap", 0.0),
+                adjusted.get("Trap Nacional", 0.0),
+                adjusted.get("Funk", 0.0),
+                adjusted.get("Rock", 0.0),
+                adjusted.get("Rock Nacional", 0.0),
+                adjusted.get("Pagode", 0.0),
+                adjusted.get("Samba", 0.0),
+                adjusted.get("MPB", 0.0),
+            )
+            if competing_non_electronic >= 0.32:
+                adjusted["Eletrônica"] = min(adjusted["Eletrônica"], 0.24)
+
+        if adjusted.get("Reggae", 0.0) > 0 and adjusted.get("Pop", 0.0) > 0 and (pop_friendly or mainstream_band or electronic_signal):
+            adjusted["Pop"] = min(0.99, max(adjusted["Pop"], adjusted["Reggae"] + 0.08))
+            adjusted["Reggae"] = min(adjusted["Reggae"], 0.34)
+
+        if funk_signal:
+            adjusted["Funk"] = min(0.99, max(adjusted.get("Funk", 0.0), 0.72) + 0.08)
+            if adjusted.get("Pagode", 0.0) > 0:
+                adjusted["Pagode"] = min(adjusted["Pagode"], 0.26)
+            if adjusted.get("Samba", 0.0) > 0:
+                adjusted["Samba"] = min(adjusted["Samba"], 0.22)
+
+        if forro_signal and not funk_signal:
+            for label in ("Samba", "Pagode", "Sertanejo", "Sertanejo Universitário", "MPB"):
+                if adjusted.get(label, 0.0) > 0:
+                    adjusted[label] = min(adjusted[label], 0.18)
+            if max(adjusted.values(), default=0.0) < 0.28:
+                return {}
+
+        trap_signal = any(term in context for term in trap_terms)
+        trap_national_signal = is_brazilian_context and any(term in context for term in trap_national_terms)
         boom_bap_signal = any(any(term in value for term in boom_bap_terms) for value in rap_values) or any(term in context for term in boom_bap_terms)
         modern_rap_signal = any(any(term in value for term in modern_rap_terms) for value in rap_values) or any(term in context for term in modern_rap_terms)
+
+        if boom_bap_artist_signal and not modern_rap_signal:
+            adjusted["Boom Bap"] = min(0.99, max(adjusted.get("Boom Bap", 0.0), adjusted.get("Rap", 0.0) + 0.12, 0.74))
+            if adjusted.get("Rap", 0.0) > 0:
+                adjusted["Rap"] = min(adjusted["Rap"], 0.46)
+
+        if adjusted.get("Trap", 0.0) > 0 and adjusted.get("Rap", 0.0) > 0 and trap_signal:
+            adjusted["Trap"] = min(0.99, max(adjusted["Trap"], adjusted["Rap"] + 0.08))
+            adjusted["Rap"] = min(adjusted["Rap"], 0.58)
+
+        if adjusted.get("Trap Nacional", 0.0) > 0 and (adjusted.get("Trap", 0.0) > 0 or adjusted.get("Rap", 0.0) > 0) and trap_national_signal:
+            dominant_base = max(adjusted.get("Trap", 0.0), adjusted.get("Rap", 0.0), adjusted.get("Trap Nacional", 0.0))
+            adjusted["Trap Nacional"] = min(0.99, dominant_base + 0.1)
+            if adjusted.get("Trap", 0.0) > 0:
+                adjusted["Trap"] = min(adjusted["Trap"], 0.64)
+            if adjusted.get("Rap", 0.0) > 0:
+                adjusted["Rap"] = min(adjusted["Rap"], 0.52)
 
         if adjusted.get("Boom Bap", 0.0) > 0 and (modern_rap_signal or not is_brazilian_context) and not boom_bap_signal:
             adjusted["Rap"] = min(0.99, max(adjusted.get("Rap", 0.0), adjusted.get("Boom Bap", 0.0) + 0.16))
@@ -1012,6 +1640,17 @@ class HybridGenreClassifier:
                     scores[canonical] = min(0.99, scores.get(canonical, 0.0) + increment)
                     evidence.setdefault(canonical, []).append(raw_value)
 
+        prototype_scores, prototype_evidence = self._classify_from_reference_prototypes(
+            track_name=track_name,
+            artist_names=artist_names,
+            album_name=album_name,
+            spotify_genres=spotify_genres,
+            lastfm_tags=lastfm_tags,
+        )
+        for label, score in prototype_scores.items():
+            scores[label] = min(0.99, scores.get(label, 0.0) + score)
+            evidence.setdefault(label, []).extend(prototype_evidence.get(label, []))
+
         guarded_scores = self._apply_style_guardrails(
             scores,
             evidence,
@@ -1022,7 +1661,7 @@ class HybridGenreClassifier:
             lastfm_tags=lastfm_tags,
         )
         cleaned_scores = {label: round(score, 4) for label, score in sorted(guarded_scores.items(), key=lambda item: item[1], reverse=True)}
-        cleaned_evidence = {label: unique_non_empty(values)[:3] for label, values in evidence.items()}
+        cleaned_evidence = {label: unique_non_empty(values)[:4] for label, values in evidence.items()}
         return cleaned_scores, cleaned_evidence
 
     def _update_provider_metrics(self, provider_name: str, success: bool, elapsed_ms: float, confidence: float = 0.0) -> None:
@@ -1144,19 +1783,20 @@ class HybridGenreClassifier:
         lyrics: str | None = None,
     ) -> str:
         taxonomy_rules = (
-            "Taxonomy rules: Trap Nacional only for Brazilian Portuguese trap; "
-            "Trap for international trap; Rap for modern BR rap or general rap not boom bap; "
-            "Boom Bap for classic BR rap with 90s/2000s old school aesthetics; "
-            "Funk only for Brazilian funk; Rock Nacional only for Brazilian rock; Rock only for international rock; "
-            "Prioritize Pop over Rock for mainstream radio songs, chart hits, dance-pop, synth-pop, commercial pop and light pop-rock; "
-            "generic guitars, live drums or band format alone are not enough to classify as Rock; "
-            "analyze the song itself, not the artist history. Metal may be national or international; Outros only when nothing fits."
+            "Taxonomy rules: choose only the single dominant genre by comparing the track with the curated reference lists as sonic/cultural prototypes; "
+            "consider instrumental palette, rhythm/BPM feel, predominant timbres, vocal structure, lyrical theme, production style, era and overall aesthetic; "
+            "Trap Nacional only for Brazilian Portuguese trap; Trap for international trap; Rap for general rap that is not dominantly boom bap; "
+            "Boom Bap for classic BR rap with dry drums, classic samples and old-school aesthetics; Funk only for Brazilian funk; "
+            "Rock Nacional only for Brazilian rock; Rock only for international rock when the song itself has clear rock identity; "
+            "prioritize Pop over Rock for mainstream radio songs, chart hits, dance-pop, synth-pop, commercial pop and light pop-rock; "
+            "generic guitars, live drums or band format alone are not enough to classify as Rock; analyze the song itself, not the artist history."
         )
         parts = [
             f"Track title: {track_name}",
             f"Artist(s): {', '.join(artist_names) if artist_names else 'unknown'}",
             f"Allowed labels: {', '.join(CANONICAL_LABELS)}",
             taxonomy_rules,
+            self.reference_prompt,
         ]
         if album_name:
             parts.append(f"Album: {album_name}")
@@ -1528,7 +2168,7 @@ class HybridGenreClassifier:
         album_name: str = "",
         lyrics: str | None = None,
         preview_url: str | None = None,
-        max_labels: int = 2,
+        max_labels: int = 1,
     ) -> dict[str, Any]:
         started_at = time.perf_counter()
         spotify_genres = unique_non_empty(spotify_genres or [])
@@ -1758,7 +2398,7 @@ class HybridGenreClassifier:
                         "ai_unavailable": True,
                     },
                 )
-            elif tf_prediction:
+            elif tf_prediction and self._should_accept_tf_fallback(tf_prediction):
                 result = self._build_result(
                     labels=tf_prediction["labels"][:max_labels],
                     confidence=tf_prediction["confidence"],

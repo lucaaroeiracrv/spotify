@@ -1,11 +1,14 @@
 import base64
+import json
 import os
 import re
 import sys
+import threading
 import time
 import unicodedata
 import webbrowser
 from http.server import BaseHTTPRequestHandler, HTTPServer
+from pathlib import Path
 from urllib.parse import parse_qs, urlencode, urlparse
 
 import requests
@@ -32,6 +35,11 @@ CALLBACK_PATH = parsed_redirect.path or "/callback"
 
 TOKEN = None
 auth_code_received = None
+auth_received_time = None
+auth_status = "idle"
+auth_error_message = ""
+BASE_DIR = Path(__file__).resolve().parent
+SCREENS_DIR = BASE_DIR / "screens"
 
 
 sertanejo_tradicional = (
@@ -495,47 +503,120 @@ def get_auth_url():
     return f"https://accounts.spotify.com/authorize?{urlencode(params)}"
 
 
+def serve_static_file(handler, file_path, fallback_content=None, content_type="text/html; charset=utf-8"):
+    try:
+        payload = file_path.read_bytes()
+    except Exception:
+        payload = (fallback_content or "").encode("utf-8")
+
+    handler.send_response(200)
+    handler.send_header("Content-Type", content_type)
+    handler.end_headers()
+    handler.wfile.write(payload)
+
+
 class CallbackHandler(BaseHTTPRequestHandler):
     def do_GET(self):
-        global auth_code_received
+        global auth_code_received, auth_received_time, auth_status, auth_error_message
 
         requested_path = self.path.split("?", 1)[0]
-        if requested_path != CALLBACK_PATH:
-            self.send_response(404)
+
+        if requested_path.startswith("/screens/"):
+            asset_name = requested_path[len("/screens/"):]
+            asset_path = (SCREENS_DIR / asset_name).resolve()
+
+            if not str(asset_path).startswith(str(SCREENS_DIR.resolve())) or not asset_path.is_file():
+                self.send_response(404)
+                self.end_headers()
+                return
+
+            content_type = "application/octet-stream"
+            if asset_path.suffix.lower() == ".css":
+                content_type = "text/css; charset=utf-8"
+            elif asset_path.suffix.lower() == ".html":
+                content_type = "text/html; charset=utf-8"
+            elif asset_path.suffix.lower() == ".js":
+                content_type = "application/javascript; charset=utf-8"
+
+            serve_static_file(self, asset_path, content_type=content_type)
+            return
+
+        if requested_path == CALLBACK_PATH:
+            parsed = urlparse(self.path)
+            params = parse_qs(parsed.query)
+            error_value = params.get("error", [None])[0]
+
+            if error_value:
+                auth_status = "error"
+                auth_error_message = f"Spotify retornou erro: {error_value}"
+                self.send_response(302)
+                self.send_header("Location", "/screens/auth_error.html")
+                self.end_headers()
+                return
+
+            auth_code_received = params.get("code", [None])[0]
+            if auth_code_received:
+                auth_received_time = time.time()
+                auth_status = "pending"
+                auth_error_message = ""
+                serve_static_file(
+                    self,
+                    SCREENS_DIR / "auth_success.html",
+                    fallback_content="<html><body><h1>Autenticação iniciada...</h1></body></html>",
+                )
+                return
+
+            auth_status = "error"
+            auth_error_message = "Código de autorização não recebido."
+            self.send_response(302)
+            self.send_header("Location", "/screens/auth_error.html")
             self.end_headers()
             return
 
-        query = self.path.split("?", 1)[-1]
-        params = parse_qs(query)
-        auth_code_received = params.get("code", [None])[0]
-
-        if auth_code_received:
-            html = """
-            <html>
-              <head><meta charset='utf-8'><title>Spotify</title></head>
-              <body style='font-family: Arial; padding: 24px;'>
-                <h1>✅ Autorização concluída</h1>
-                <p>Você já pode voltar para o terminal.</p>
-              </body>
-            </html>
-            """
+        if requested_path == "/oauth-status":
             self.send_response(200)
-            self.send_header("Content-Type", "text/html; charset=utf-8")
+            self.send_header("Content-Type", "application/json; charset=utf-8")
+            self.send_header("Cache-Control", "no-store, no-cache, must-revalidate")
             self.end_headers()
-            self.wfile.write(html.encode("utf-8"))
+            payload = {
+                "status": auth_status,
+                "error": auth_error_message,
+            }
+            self.wfile.write(json.dumps(payload).encode("utf-8"))
             return
 
-        self.send_response(400)
+        self.send_response(404)
         self.end_headers()
-        self.wfile.write(b"Authorization code not received.")
 
     def log_message(self, format, *args):
         return
 
 
 def start_callback_server():
+    global auth_code_received, auth_received_time, auth_status, auth_error_message
+
+    auth_code_received = None
+    auth_received_time = None
+    auth_status = "idle"
+    auth_error_message = ""
+
     server = HTTPServer((CALLBACK_HOST, CALLBACK_PORT), CallbackHandler)
     server.timeout = 1
+
+    def serve_until_finished():
+        started_at = time.time()
+        while True:
+            server.handle_request()
+
+            if auth_status in {"success", "error"}:
+                if auth_received_time and (time.time() - auth_received_time) > 2:
+                    break
+            elif (time.time() - started_at) > 180:
+                break
+
+        server.server_close()
+
+    threading.Thread(target=serve_until_finished, daemon=True).start()
     return server
 
 
@@ -558,11 +639,12 @@ def open_in_browser(url):
     return False
 
 
-def wait_for_auth_code(server, timeout_seconds=120):
+def wait_for_auth_code(server=None, timeout_seconds=120):
+    del server
+
     started_at = time.time()
     while auth_code_received is None and (time.time() - started_at) < timeout_seconds:
-        server.handle_request()
-    server.server_close()
+        time.sleep(0.1)
     return auth_code_received
 
 
@@ -706,7 +788,7 @@ def run_dry_mode():
 
 
 def main():
-    global TOKEN
+    global TOKEN, auth_status, auth_error_message, auth_received_time
 
     if "--dry-run" in sys.argv:
         run_dry_mode()
@@ -731,12 +813,19 @@ def main():
 
     code = wait_for_auth_code(server)
     if not code:
+        auth_status = "error"
+        auth_error_message = "Não foi possível capturar o código de autorização."
         print("❌ Não foi possível capturar o código de autorização.")
         return 1
 
     TOKEN = get_token_from_code(code)
     if not TOKEN:
+        auth_status = "error"
+        auth_error_message = "Falha ao obter token. Verifique as credenciais e o Redirect URI."
         return 1
+
+    auth_status = "success"
+    auth_received_time = time.time()
 
     found_uris = []
     not_found = []

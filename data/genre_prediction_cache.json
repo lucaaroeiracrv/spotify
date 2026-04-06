@@ -1,214 +1,36 @@
 {
   "items": {
-    "evidencias||chitaozinho & xororo||||": {
-      "genre": "Sertanejo Tradicional",
-      "style": "Sertanejo Tradicional",
-      "subgenre": "Sertanejo Tradicional",
-      "labels": [
-        "Sertanejo Tradicional"
-      ],
-      "confidence": 0.985,
-      "source": "Referência",
-      "metadata": {
-        "provider": "reference",
-        "spotify_genres": [],
-        "lastfm_tags": [],
-        "audio_preview_available": false,
-        "classifier_version": "2026-04-05-reference-v4",
-        "reference_match": true,
-        "reference_artists": [
-          "Chitãozinho",
-          "Xororó"
-        ]
-      }
-    },
-    "ai se eu te pego||michel telo||||": {
-      "genre": "Sertanejo Universitário",
-      "style": "Sertanejo Universitário",
-      "subgenre": "Sertanejo Universitário",
-      "labels": [
-        "Sertanejo Universitário"
-      ],
-      "confidence": 0.985,
-      "source": "Referência",
-      "metadata": {
-        "provider": "reference",
-        "spotify_genres": [],
-        "lastfm_tags": [],
-        "audio_preview_available": false,
-        "classifier_version": "2026-04-05-reference-v4",
-        "reference_match": true,
-        "reference_artists": [
-          "Michel Teló"
-        ]
-      }
-    },
-    "roar||katy perry||prism||pop": {
-      "genre": "Pop",
-      "style": "Pop",
-      "subgenre": "Pop",
-      "labels": [
-        "Pop"
-      ],
-      "confidence": 0.995,
-      "source": "Feedback",
-      "metadata": {
-        "provider": "feedback",
-        "spotify_genres": [
-          "pop"
-        ],
-        "lastfm_tags": [
-          "radio mainstream",
-          "dance pop",
-          "anthemic chorus",
-          "global chart hit"
-        ],
-        "audio_preview_available": false,
-        "classifier_version": "2026-04-05-reference-v4",
-        "feedback_priority": true,
-        "feedback_weight": 4.5,
-        "feedback_album": "PRISM"
-      }
-    },
-    "empire state of mind||jay-z||||hip hop rap": {
-      "genre": "Rap",
-      "style": "Rap",
-      "subgenre": "Rap",
-      "labels": [
-        "Rap"
-      ],
-      "confidence": 0.985,
-      "source": "Referência",
-      "metadata": {
-        "provider": "reference",
-        "spotify_genres": [
-          "hip hop",
-          "rap"
-        ],
-        "lastfm_tags": [],
-        "audio_preview_available": false,
-        "classifier_version": "2026-04-05-reference-v4",
-        "reference_match": true,
-        "reference_artists": [
-          "Jay-Z"
-        ]
-      }
-    },
-    "negro drama||racionais mc s||||brazilian hip hop": {
-      "genre": "Boom Bap",
-      "style": "Boom Bap",
-      "subgenre": "Boom Bap",
-      "labels": [
-        "Boom Bap"
-      ],
-      "confidence": 0.985,
-      "source": "Referência",
-      "metadata": {
-        "provider": "reference",
-        "spotify_genres": [
-          "brazilian hip hop"
-        ],
-        "lastfm_tags": [],
-        "audio_preview_available": false,
-        "classifier_version": "2026-04-05-reference-v4",
-        "reference_match": true,
-        "reference_artists": [
-          "Racionais MC’s"
-        ]
-      }
-    },
-    "olha a explosao||mc kevinho||||": {
-      "genre": "Funk",
-      "style": "Funk",
-      "subgenre": "Funk",
-      "labels": [
-        "Funk"
-      ],
-      "confidence": 0.985,
-      "source": "Referência",
-      "metadata": {
-        "provider": "reference",
-        "spotify_genres": [],
-        "lastfm_tags": [],
-        "audio_preview_available": false,
-        "classifier_version": "2026-04-05-reference-v4",
-        "reference_match": true,
-        "reference_artists": [
-          "MC Kevinho"
-        ]
-      }
-    },
-    "tempo perdido||legiao urbana||||": {
-      "genre": "Rock Nacional",
-      "style": "Rock Nacional",
-      "subgenre": "Rock Nacional",
-      "labels": [
-        "Rock Nacional"
-      ],
-      "confidence": 0.985,
-      "source": "Referência",
-      "metadata": {
-        "provider": "reference",
-        "spotify_genres": [],
-        "lastfm_tags": [],
-        "audio_preview_available": false,
-        "classifier_version": "2026-04-05-reference-v4",
-        "reference_match": true,
-        "reference_artists": [
-          "Legião Urbana"
-        ]
-      }
-    },
-    "roots bloody roots||sepultura||||": {
-      "genre": "Metal",
-      "style": "Metal",
-      "subgenre": "Metal",
-      "labels": [
-        "Metal"
-      ],
-      "confidence": 0.985,
-      "source": "Referência",
-      "metadata": {
-        "provider": "reference",
-        "spotify_genres": [],
-        "lastfm_tags": [],
-        "audio_preview_available": false,
-        "classifier_version": "2026-04-05-reference-v4",
-        "reference_match": true,
-        "reference_artists": [
-          "Sepultura"
-        ]
-      }
-    },
-    "levels||avicii||||edm": {
+    "rather be||clean bandit jess glynne||||": {
       "genre": "Eletrônica",
       "style": "Eletrônica",
       "subgenre": "Eletrônica",
       "labels": [
         "Eletrônica"
       ],
-      "confidence": 0.985,
-      "source": "Referência",
+      "confidence": 0.995,
+      "source": "Feedback",
       "metadata": {
-        "provider": "reference",
-        "spotify_genres": [
-          "edm"
+        "provider": "feedback",
+        "spotify_genres": [],
+        "lastfm_tags": [
+          "electronic production",
+          "dancefloor",
+          "house pop",
+          "club crossover"
         ],
-        "lastfm_tags": [],
         "audio_preview_available": false,
-        "classifier_version": "2026-04-05-reference-v4",
-        "reference_match": true,
-        "reference_artists": [
-          "Avicii"
-        ]
+        "classifier_version": "2026-04-06-prototype-v10",
+        "feedback_priority": true,
+        "feedback_weight": 4.4,
+        "feedback_album": "New Eyes"
       }
     },
-    "sorri sou rei||natiruts||||": {
-      "genre": "Reggae",
-      "style": "Reggae",
-      "subgenre": "Reggae",
+    "starboy||the weeknd daft punk||||": {
+      "genre": "Pop",
+      "style": "Pop",
+      "subgenre": "Pop",
       "labels": [
-        "Reggae"
+        "Pop"
       ],
       "confidence": 0.985,
       "source": "Referência",
@@ -217,11 +39,87 @@
         "spotify_genres": [],
         "lastfm_tags": [],
         "audio_preview_available": false,
-        "classifier_version": "2026-04-05-reference-v4",
+        "classifier_version": "2026-04-06-prototype-v10",
         "reference_match": true,
         "reference_artists": [
-          "Natiruts"
+          "The Weeknd",
+          "Daft Punk"
         ]
+      }
+    },
+    "enter sandman||metallica||||": {
+      "genre": "Metal",
+      "style": "Metal",
+      "subgenre": "Metal",
+      "labels": [
+        "Metal"
+      ],
+      "confidence": 0.995,
+      "source": "Feedback",
+      "metadata": {
+        "provider": "feedback",
+        "spotify_genres": [],
+        "lastfm_tags": [
+          "heavy metal",
+          "riff pesado",
+          "distorcao intensa",
+          "headbang"
+        ],
+        "audio_preview_available": false,
+        "classifier_version": "2026-04-06-prototype-v10",
+        "feedback_priority": true,
+        "feedback_weight": 4.7,
+        "feedback_album": "Metallica"
+      }
+    },
+    "wonderwall||oasis||||": {
+      "genre": "Rock",
+      "style": "Rock",
+      "subgenre": "Rock",
+      "labels": [
+        "Rock"
+      ],
+      "confidence": 0.995,
+      "source": "Feedback",
+      "metadata": {
+        "provider": "feedback",
+        "spotify_genres": [],
+        "lastfm_tags": [
+          "britpop",
+          "guitarras",
+          "banda",
+          "rock"
+        ],
+        "audio_preview_available": false,
+        "classifier_version": "2026-04-06-prototype-v10",
+        "feedback_priority": true,
+        "feedback_weight": 4.1,
+        "feedback_album": "(What's The Story) Morning Glory?"
+      }
+    },
+    "vida loka pt 2||racionais mc s||||": {
+      "genre": "Boom Bap",
+      "style": "Boom Bap",
+      "subgenre": "Boom Bap",
+      "labels": [
+        "Boom Bap"
+      ],
+      "confidence": 0.995,
+      "source": "Feedback",
+      "metadata": {
+        "provider": "feedback",
+        "spotify_genres": [],
+        "lastfm_tags": [
+          "boom bap",
+          "old school",
+          "sample-based",
+          "rap brasileiro classico"
+        ],
+        "audio_preview_available": false,
+        "classifier_version": "2026-04-06-prototype-v10",
+        "feedback_priority": true,
+        "feedback_weight": 4.8,
+        "feedback_album": "Nada Como Um Dia Após o Outro Dia"
       }
     }
   }

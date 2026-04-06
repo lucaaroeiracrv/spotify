@@ -1,5 +1,5 @@
 {
-  "sample_count": 362,
+  "sample_count": 1293,
   "labels": [
     "Sertanejo Tradicional",
     "Sertanejo Universitário",
@@ -20,6 +20,6 @@
     "MPB",
     "Outros"
   ],
-  "updated_at": 1775443200,
-  "version": "2026-04-05-reference-v4"
+  "updated_at": 1775450927,
+  "version": "2026-04-06-prototype-v11"
 }

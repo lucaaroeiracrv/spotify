@@ -1,5 +1,6 @@
 import requests
 import pyperclip
+import re
 import sys
 import time
 import os
@@ -262,6 +263,12 @@ def loading_bar(progress, total, bar_length=40):
     spaces = ' ' * (bar_length - len(arrow))
     sys.stdout.write(f'\rCarregando músicas: [{arrow}{spaces}] {int(percent*100)}%')
     sys.stdout.flush()
+
+def sanitize_filename(value, fallback='playlist'):
+    sanitized = re.sub(r'[<>:"/\\|?*\x00-\x1f]', '-', str(value or ''))
+    sanitized = re.sub(r'\s+', ' ', sanitized).strip().strip('.')
+    return sanitized or fallback
+
 
 def get_playlist_name(playlist_url):
     playlist_id = playlist_url.split("/")[-1].split("?")[0]
@@ -631,9 +638,10 @@ if __name__ == "__main__":
         # Criar pasta 'playlists' se não existir
         pasta_playlist = Path("playlists")
         pasta_playlist.mkdir(exist_ok=True)
-        
-        # Salvar arquivo com nome da playlist
-        nome_arquivo = pasta_playlist / f"{playlist_name}.txt"
+
+        # Salvar arquivo com nome compatível com Windows
+        nome_base = sanitize_filename(playlist_name, fallback='playlist')
+        nome_arquivo = pasta_playlist / f"{nome_base}.txt"
         with open(nome_arquivo, 'w', encoding='utf-8') as f:
             f.write('\n'.join(lista_final))
         print(f"Lista salva no arquivo: {nome_arquivo}")
