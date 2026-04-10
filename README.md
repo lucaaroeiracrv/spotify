@@ -30,6 +30,37 @@ Este projeto foi desenvolvido com finalidade acadêmica, aplicando conceitos com
 - Organização e boas práticas em Python
 
 ---
+'''mermaid
+flowchart TD
+    E[Entrada] --> P[Processamento de Dados] --> S[Saída]
+
+    subgraph Entrada
+        E1[Usuário escolhe script]
+        E2[Login no Spotify]
+        E3[Seleciona playlist]
+    end
+
+    subgraph "Processamento de Dados"
+        P1[Busca músicas da playlist]
+        P2[Coleta dados das faixas]
+        P3["Classifica gênero (base, cache, IA)"]
+        P4[Agrupa por gênero]
+    end
+
+    subgraph Saída
+        S1[Exibe resultado]
+        S2[Copiar lista]
+        S3[Salvar em arquivo]
+        S4[Criar playlists no Spotify]
+    end
+
+    E --> E1 --> E2 --> E3 --> P1
+    P --> P1 --> P2 --> P3 --> P4 --> S1
+    S --> S1 --> S2
+    S1 --> S3
+    S1 --> S4
+'''
+---
 
 ## ✨ Funcionalidades
 
