@@ -13,7 +13,7 @@
 
 - **Luca Aroeira**
 - **Diego Duque**
-- **Kaun Silva**
+- **Kauan Silva**
 
 ---
 
