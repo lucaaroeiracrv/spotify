@@ -30,6 +30,7 @@ Este projeto foi desenvolvido com finalidade acadêmica, aplicando conceitos com
 - Organização e boas práticas em Python
 
 ---
+## 🧜‍♀️ Mermaid
 ```mermaid
 flowchart TD
     E[Entrada] --> P[Processamento de Dados] --> S[Saída]
