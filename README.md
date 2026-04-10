@@ -13,7 +13,7 @@ Organizador de playlists do Spotify com **classificação por gênero dominante*
 
 - **Luca Aroeira**
 - **Diego Duque**
-- **Kaun Silva**
+- **Kauan Silva**
 
 ---
 
