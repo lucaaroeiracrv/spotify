@@ -1,0 +1,257 @@
+{
+  "name": "Spotify Genre Checker",
+  "nodes": [
+    {
+      "parameters": {
+        "formTitle": "Spotify Genre Checker",
+        "formDescription": "Informe o artista e a música para identificar o gênero musical.",
+        "formFields": {
+          "values": [
+            {
+              "fieldLabel": "artist",
+              "placeholder": "Ex: Metallica",
+              "requiredField": true
+            },
+            {
+              "fieldLabel": "track",
+              "placeholder": "Ex: Enter Sandman",
+              "requiredField": true
+            },
+            {
+              "fieldLabel": "genre_hint",
+              "placeholder": "Ex: Metal (opcional)",
+              "requiredField": false
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "node-form-trigger",
+      "name": "Formulário de Entrada",
+      "type": "n8n-nodes-base.formTrigger",
+      "typeVersion": 2,
+      "position": [240, 300],
+      "webhookId": "spotify-genre-checker-form"
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "=https://api.deezer.com/search?q=artist:\"{{ $json.artist }}\" track:\"{{ $json.track }}\"&limit=1",
+        "options": {
+          "timeout": 10000
+        }
+      },
+      "id": "node-http-deezer",
+      "name": "Buscar na API Deezer",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [500, 300]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "condition-total",
+              "leftValue": "={{ $json.total }}",
+              "rightValue": 0,
+              "operator": {
+                "type": "number",
+                "operation": "gt"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "node-if",
+      "name": "Música Encontrada?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [760, 300]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "assign-found-track",
+              "name": "track",
+              "value": "={{ $('Buscar na API Deezer').item.json.data[0].title }}",
+              "type": "string"
+            },
+            {
+              "id": "assign-found-artist",
+              "name": "artist",
+              "value": "={{ $('Buscar na API Deezer').item.json.data[0].artist.name }}",
+              "type": "string"
+            },
+            {
+              "id": "assign-found-album",
+              "name": "album",
+              "value": "={{ $('Buscar na API Deezer').item.json.data[0].album.title }}",
+              "type": "string"
+            },
+            {
+              "id": "assign-found-duration",
+              "name": "duration_seconds",
+              "value": "={{ $('Buscar na API Deezer').item.json.data[0].duration }}",
+              "type": "number"
+            },
+            {
+              "id": "assign-found-genre",
+              "name": "genre",
+              "value": "={{ $('Buscar na API Deezer').item.json.data[0].type ?? 'Não identificado' }}",
+              "type": "string"
+            },
+            {
+              "id": "assign-found-preview",
+              "name": "preview_url",
+              "value": "={{ $('Buscar na API Deezer').item.json.data[0].preview }}",
+              "type": "string"
+            },
+            {
+              "id": "assign-found-status",
+              "name": "status",
+              "value": "found",
+              "type": "string"
+            },
+            {
+              "id": "assign-found-message",
+              "name": "message",
+              "value": "✅ Música encontrada na base do Deezer.",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "node-set-found",
+      "name": "Preparar Resposta — Encontrada",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3,
+      "position": [1020, 160]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "assign-nf-track",
+              "name": "track",
+              "value": "={{ $('Formulário de Entrada').item.json.track }}",
+              "type": "string"
+            },
+            {
+              "id": "assign-nf-artist",
+              "name": "artist",
+              "value": "={{ $('Formulário de Entrada').item.json.artist }}",
+              "type": "string"
+            },
+            {
+              "id": "assign-nf-genre-hint",
+              "name": "genre_hint",
+              "value": "={{ $('Formulário de Entrada').item.json.genre_hint || 'Outros' }}",
+              "type": "string"
+            },
+            {
+              "id": "assign-nf-status",
+              "name": "status",
+              "value": "not_found",
+              "type": "string"
+            },
+            {
+              "id": "assign-nf-message",
+              "name": "message",
+              "value": "={{ '⚠️ Música não encontrada. Sugestão de gênero: ' + ($('Formulário de Entrada').item.json.genre_hint || 'Outros') }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "node-set-not-found",
+      "name": "Preparar Resposta — Não Encontrada",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3,
+      "position": [1020, 440]
+    }
+  ],
+  "connections": {
+    "Formulário de Entrada": {
+      "main": [
+        [
+          {
+            "node": "Buscar na API Deezer",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Buscar na API Deezer": {
+      "main": [
+        [
+          {
+            "node": "Música Encontrada?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Música Encontrada?": {
+      "main": [
+        [
+          {
+            "node": "Preparar Resposta — Encontrada",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Preparar Resposta — Não Encontrada",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Preparar Resposta — Encontrada": {
+      "main": [
+        []
+      ]
+    },
+    "Preparar Resposta — Não Encontrada": {
+      "main": [
+        []
+      ]
+    }
+  },
+  "pinData": {},
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "tags": [
+    {
+      "name": "spotify"
+    },
+    {
+      "name": "deezer"
+    },
+    {
+      "name": "genre-checker"
+    }
+  ],
+  "triggerCount": 1,
+  "updatedAt": "2026-04-23T00:00:00.000Z",
+  "versionId": "1"
+}
