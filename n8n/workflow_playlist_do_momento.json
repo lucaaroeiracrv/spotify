@@ -1,0 +1,352 @@
+
+
+{
+  "name": "Playlist do Momento 🎧 (Gemini - Revisado)",
+  "nodes": [
+    {
+      "parameters": {
+        "formTitle": "🎧 Playlist do Momento",
+        "formDescription": "Conte como você está e onde está — vamos montar a vibe perfeita pra esse momento.",
+        "formFields": {
+          "values": [
+            {
+              "fieldLabel": "Qual é o seu humor agora?",
+              "fieldType": "dropdown",
+              "fieldOptions": {
+                "values": [
+                  { "option": "Feliz" },
+                  { "option": "Triste" },
+                  { "option": "Animado" },
+                  { "option": "Calmo" },
+                  { "option": "Focado" },
+                  { "option": "Romântico" },
+                  { "option": "Melancólico" },
+                  { "option": "Energizado" },
+                  { "option": "Nostálgico" },
+                  { "option": "Ansioso" }
+                ]
+              },
+              "requiredField": true
+            },
+            {
+              "fieldLabel": "Em qual cidade você está?",
+              "placeholder": "Ex: São Paulo",
+              "requiredField": true
+            }
+          ]
+        },
+        "responseMode": "lastNode",
+        "options": {}
+      },
+      "id": "11111111-1111-1111-1111-111111111111",
+      "name": "📝 Formulário - Humor & Cidade",
+      "type": "n8n-nodes-base.formTrigger",
+      "typeVersion": 2.2,
+      "position": [240, 400],
+      "webhookId": "playlist-momento-form"
+    },
+    {
+      "parameters": {
+        "url": "https://geocoding-api.open-meteo.com/v1/search",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            { "name": "name", "value": "={{ $json['Em qual cidade você está?'] }}" },
+            { "name": "count", "value": "1" },
+            { "name": "language", "value": "pt" },
+            { "name": "format", "value": "json" }
+          ]
+        },
+        "options": {}
+      },
+      "id": "22222222-2222-2222-2222-222222222222",
+      "name": "🌍 Buscar Coordenadas (Geocoding)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [460, 400]
+    },
+    {
+      "parameters": {
+        "url": "https://api.open-meteo.com/v1/forecast",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            { "name": "latitude", "value": "={{ $json.results[0].latitude }}" },
+            { "name": "longitude", "value": "={{ $json.results[0].longitude }}" },
+            { "name": "current", "value": "temperature_2m,weather_code,precipitation,relative_humidity_2m,wind_speed_10m" },
+            { "name": "timezone", "value": "auto" }
+          ]
+        },
+        "options": {}
+      },
+      "id": "33333333-3333-3333-3333-333333333333",
+      "name": "🌦️ Consultar Clima (Open-Meteo)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [680, 400]
+    },
+    {
+      "parameters": {
+        "jsCode": "// === Processa entradas do formulário e dados do clima ===\nconst formData = $('📝 Formulário - Humor & Cidade').item.json;\nconst geoData  = $('🌍 Buscar Coordenadas (Geocoding)').item.json;\nconst weatherData = $input.item.json;\n\nconst humor = formData['Qual é o seu humor agora?'];\nconst cidadeInformada = formData['Em qual cidade você está?'];\n\n// Validação: cidade encontrada e temperatura disponível?\nconst sucesso = (geoData.results && geoData.results.length > 0 && weatherData.current && typeof weatherData.current.temperature_2m === 'number');\n\nlet cidadeOficial = null;\nlet pais = null;\nlet estado = null;\nlet temperatura = null;\nlet weatherCode = null;\nlet precipitacao = null;\nlet umidade = null;\nlet vento = null;\nlet descricaoClima = 'Dados indisponíveis';\n\nif (sucesso) {\n  cidadeOficial = geoData.results[0].name;\n  pais   = geoData.results[0].country  || '';\n  estado = geoData.results[0].admin1   || '';\n\n  // Dados climáticos atuais\n  const current = weatherData.current || {};\n  temperatura  = current.temperature_2m;\n  weatherCode  = current.weather_code;\n  precipitacao = current.precipitation;\n  umidade      = current.relative_humidity_2m;\n  vento        = current.wind_speed_10m;\n\n  // Mapeamento dos códigos da Open-Meteo (WMO Weather codes)\n  const weatherDescriptions = {\n    0: 'Céu limpo ☀️', 1: 'Predominantemente ensolarado 🌤️', 2: 'Parcialmente nublado ⛅', 3: 'Nublado ☁️',\n    45: 'Neblina 🌫️', 48: 'Neblina com geada 🌫️❄️', 51: 'Garoa fraca 🌦️', 53: 'Garoa moderada 🌦️',\n    55: 'Garoa intensa 🌧️', 61: 'Chuva fraca 🌧️', 63: 'Chuva moderada 🌧️', 65: 'Chuva forte ⛈️',\n    71: 'Neve fraca 🌨️', 73: 'Neve moderada 🌨️', 75: 'Neve forte ❄️', 80: 'Pancadas de chuva fracas 🌦️',\n    81: 'Pancadas de chuva moderadas 🌧️', 82: 'Pancadas de chuva fortes ⛈️', 95: 'Trovoada ⛈️',\n    96: 'Trovoada com granizo ⛈️', 99: 'Trovoada com granizo forte ⛈️'\n  };\n  descricaoClima = weatherDescriptions[weatherCode] || 'Condição desconhecida';\n}\n\nreturn [{\n  json: {\n    sucesso, // Nova variável booleana para indicar sucesso na busca\n    humor,\n    cidadeInformada,\n    cidadeOficial,\n    estado,\n    pais,\n    temperatura,\n    weatherCode,\n    descricaoClima,\n    precipitacao,\n    umidade,\n    vento\n  }\n}];"
+      },
+      "id": "44444444-4444-4444-4444-444444444444",
+      "name": "⚙️ Processar Dados Climáticos",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [900, 400]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "cond-sucesso-busca",
+              "leftValue": "={{ $json.sucesso }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "55555555-5555-5555-5555-555555555555",
+      "name": "❓ Sucesso na Busca?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [1120, 400]
+    },
+    {
+      "parameters": {
+        "model": "gemini-pro",
+        "chatMessages": {
+          "values": [
+            {
+              "role": "system",
+              "content": "Você é um curador musical especialista em playlists do Spotify. Sua missão é recomendar a playlist perfeita baseada no humor do usuário e nas condições climáticas atuais (temperatura e descrição do clima). Adapte o estilo musical (calmo, animado, focado, etc.) de acordo com a vibe combinada. Responda SEMPRE e APENAS em JSON válido, sem markdown e sem texto extra, com esta estrutura exata: {\"tipoPlaylist\": \"...\", \"justificativa\": \"...\", \"sugestaoBuscaSpotify\": \"...\", \"musicasSugeridas\": [\"Artista - Música 1\", \"Artista - Música 2\", \"Artista - Música 3\"], \"emoji\": \"...\"}"
+            },
+            {
+              "role": "user",
+              "content": "Humor do usuário: {{ $('⚙️ Processar Dados Climáticos').item.json.humor }}\nCidade: {{ $('⚙️ Processar Dados Climáticos').item.json.cidadeOficial }}, {{ $('⚙️ Processar Dados Climáticos').item.json.pais }}\nClima atual: {{ $('⚙️ Processar Dados Climáticos').item.json.descricaoClima }}\nTemperatura: {{ $('⚙️ Processar Dados Climáticos').item.json.temperatura }}°C\nRecomende uma playlist ideal para este humor e clima. Justifique em até 2 frases."
+            }
+          ]
+        },
+        "options": {
+          "temperature": 0.8
+        }
+      },
+      "id": "eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee",
+      "name": "🤖 IA - Curadoria Musical (Gemini)",
+      "type": "n8n-nodes-base.googleGemini",
+      "typeVersion": 1,
+      "position": [1340, 400],
+      "credentials": {
+        "googleGeminiApi": {
+          "id": "REPLACE_WITH_YOUR_GEMINI_CREDENTIAL_ID",
+          "name": "Google Gemini account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "a1",
+              "name": "respostaFinal",
+              "value": "=🎧 *PLAYLIST DO MOMENTO*\n\n📍 Local: {{ $('⚙️ Processar Dados Climáticos').item.json.cidadeOficial }}, {{ $('⚙️ Processar Dados Climáticos').item.json.pais }}\n🌡️ Clima: {{ $('⚙️ Processar Dados Climáticos').item.json.descricaoClima }} — {{ $('⚙️ Processar Dados Climáticos').item.json.temperatura }}°C\n😊 Humor: {{ $('⚙️ Processar Dados Climáticos').item.json.humor }}\n\n🎵 **Playlist ideal:* {{ $('🤖 IA - Curadoria Musical (Gemini)').item.json.tipoPlaylist }} {{ $('🤖 IA - Curadoria Musical (Gemini)').item.json.emoji }}\n\n💡 *Por quê?\n{{ $('🤖 IA - Curadoria Musical (Gemini)').item.json.justificativa }}\n\n🔎 **Busca no Spotify:* \"{{ $('🤖 IA - Curadoria Musical (Gemini)').item.json.sugestaoBuscaSpotify }}\"\n\n🎶 *Comece com estas músicas:*\n• {{ $('🤖 IA - Curadoria Musical (Gemini)').item.json.musicasSugeridas[0] }}\n• {{ $('🤖 IA - Curadoria Musical (Gemini)').item.json.musicasSugeridas[1] }}\n• {{ $('🤖 IA - Curadoria Musical (Gemini)').item.json.musicasSugeridas[2] }}\n\nAproveite o momento ✨",
+              "type": "string"
+            },
+            {
+              "id": "a2",
+              "name": "tipoPlaylist",
+              "value": "={{ $('🤖 IA - Curadoria Musical (Gemini)').item.json.tipoPlaylist }}",
+              "type": "string"
+            },
+            {
+              "id": "a3",
+              "name": "sugestaoBuscaSpotify",
+              "value": "={{ $('🤖 IA - Curadoria Musical (Gemini)').item.json.sugestaoBuscaSpotify }}",
+              "type": "string"
+            },
+            {
+              "id": "a4",
+              "name": "justificativa",
+              "value": "={{ $('🤖 IA - Curadoria Musical (Gemini)').item.json.justificativa }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "88888888-8888-8888-8888-888888888888",
+      "name": "🎵 Formatar Resposta da IA",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [1560, 400]
+    },
+    {
+      "parameters": {
+        "operation": "completion",
+        "completionTitle": "🎧 Sua Playlist do Momento está pronta!",
+        "completionMessage": "={{ $('🎵 Formatar Resposta da IA').item.json.respostaFinal }}",
+        "options": {}
+      },
+      "id": "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa",
+      "name": "📤 Exibir Playlist",
+      "type": "n8n-nodes-base.form",
+      "typeVersion": 1,
+      "position": [1780, 400],
+      "webhookId": "playlist-momento-out"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "errorMsg",
+              "name": "respostaFinal",
+              "value": "Ops, não conseguimos encontrar dados para esta cidade ou o clima. Tente novamente com outra cidade ou verifique a ortografia! 😔",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "cccccccc-cccc-cccc-cccc-cccccccccccc",
+      "name": "📝 Gerar Mensagem de Erro",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [1340, 600]
+    },
+    {
+      "parameters": {
+        "operation": "completion",
+        "completionTitle": "Ocorreu um erro 😔",
+        "completionMessage": "={{ $('📝 Gerar Mensagem de Erro').item.json.respostaFinal }}",
+        "options": {}
+      },
+      "id": "dddddddd-dddd-dddd-dddd-dddddddddddd",
+      "name": "📤 Exibir Mensagem de Erro",
+      "type": "n8n-nodes-base.form",
+      "typeVersion": 1,
+      "position": [1560, 600],
+      "webhookId": "playlist-momento-error-out"
+    }
+  ],
+  "connections": {
+    "📝 Formulário - Humor & Cidade": {
+      "main": [
+        [
+          {
+            "node": "🌍 Buscar Coordenadas (Geocoding)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "🌍 Buscar Coordenadas (Geocoding)": {
+      "main": [
+        [
+          {
+            "node": "🌦️ Consultar Clima (Open-Meteo)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "🌦️ Consultar Clima (Open-Meteo)": {
+      "main": [
+        [
+          {
+            "node": "⚙️ Processar Dados Climáticos",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "⚙️ Processar Dados Climáticos": {
+      "main": [
+        [
+          {
+            "node": "❓ Sucesso na Busca?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "❓ Sucesso na Busca?": {
+      "main": [
+        [
+          {
+            "node": "🤖 IA - Curadoria Musical (Gemini)",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "📝 Gerar Mensagem de Erro",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "🤖 IA - Curadoria Musical (Gemini)": {
+      "main": [
+        [
+          {
+            "node": "🎵 Formatar Resposta da IA",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "🎵 Formatar Resposta da IA": {
+      "main": [
+        [
+          {
+            "node": "📤 Exibir Playlist",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "📝 Gerar Mensagem de Erro": {
+      "main": [
+        [
+          {
+            "node": "📤 Exibir Mensagem de Erro",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "1.0.0",
+  "meta": {
+    "instanceId": "playlist-do-momento-gemini-final-revisado"
+  }
+}
