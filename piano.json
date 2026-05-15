@@ -1,0 +1,30 @@
+{
+  "version": 1,
+  "author": "Diego",
+  "editor": "wokwi",
+  "parts": [
+    { "type": "wokwi-arduino-uno", "id": "uno", "top": 0, "left": 0 },
+    { "type": "wokwi-buzzer", "id": "buzzer", "top": -40, "left": 200 },
+    
+    { "type": "wokwi-pushbutton", "id": "btn1", "top": 100, "left": 150 },
+    { "type": "wokwi-pushbutton", "id": "btn2", "top": 100, "left": 220 },
+    { "type": "wokwi-pushbutton", "id": "btn3", "top": 100, "left": 290 },
+    { "type": "wokwi-pushbutton", "id": "btn4", "top": 100, "left": 360 }
+  ],
+  "connections": [
+    [ "uno:8", "buzzer:1", "green" ],
+    [ "buzzer:2", "uno:GND", "black" ],
+
+    [ "uno:2", "btn1:1.l", "green" ],
+    [ "btn1:2.r", "uno:GND", "black" ],
+
+    [ "uno:3", "btn2:1.l", "green" ],
+    [ "btn2:2.r", "uno:GND", "black" ],
+
+    [ "uno:4", "btn3:1.l", "green" ],
+    [ "btn3:2.r", "uno:GND", "black" ],
+
+    [ "uno:5", "btn4:1.l", "green" ],
+    [ "btn4:2.r", "uno:GND", "black" ]
+  ]
+}
